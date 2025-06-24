@@ -11,7 +11,13 @@ impl Agent for DQNAgent {
         todo!()
     }
 
-    fn learn(&mut self, state: (usize, usize), action: crate::Action, reward: f32, next_state: (usize, usize)) {
+    fn learn(
+        &mut self,
+        state: (usize, usize),
+        action: crate::Action,
+        reward: f32,
+        next_state: (usize, usize),
+    ) {
         todo!()
     }
 
@@ -23,7 +29,10 @@ impl Agent for DQNAgent {
         todo!()
     }
 
-    fn load(path: &str, rows: usize, cols: usize) -> Result<Self, std::io::Error> where Self: Sized {
+    fn load(path: &str, rows: usize, cols: usize) -> Result<Self, std::io::Error>
+    where
+        Self: Sized,
+    {
         todo!()
     }
 }

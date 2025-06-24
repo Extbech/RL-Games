@@ -47,12 +47,58 @@ impl ActivationFunction {
     }
 }
 
+pub enum LossFunction {
+    /// Mean Squared Error (MSE) loss function.
+    MeanSquaredError,
+    BinaryCrossEntropy,
+}
+
+impl LossFunction {
+    /// Calculates the loss between the predicted output and the target output.
+    pub fn calculate(&self, predicted: &[f64], target: &[f64]) -> f64 {
+        match self {
+            LossFunction::MeanSquaredError => {
+                predicted
+                    .iter()
+                    .zip(target)
+                    .map(|(p, t)| (p - t).powi(2))
+                    .sum::<f64>()
+                    / predicted.len() as f64
+            }
+            LossFunction::BinaryCrossEntropy => {
+                predicted
+                    .iter()
+                    .zip(target)
+                    .map(|(p, t)| if *t == 1.0 { -p.ln() } else { -(1.0 - p).ln() })
+                    .sum::<f64>()
+                    / predicted.len() as f64
+            }
+        }
+    }
+
+    /// Calculates the gradient of the loss function with respect to the predicted output.
+    pub fn gradient(&self, predicted: &[f64], target: &[f64]) -> Vec<f64> {
+        match self {
+            LossFunction::MeanSquaredError => predicted
+                .iter()
+                .zip(target)
+                .map(|(p, t)| 2.0 * (p - t) / predicted.len() as f64)
+                .collect(),
+            LossFunction::BinaryCrossEntropy => predicted
+                .iter()
+                .zip(target)
+                .map(|(p, t)| if *t == 1.0 { 1.0 / p } else { -1.0 / (1.0 - p) })
+                .collect(),
+        }
+    }
+}
 /// A simple deep neural network struct.
 pub struct NeuralNetwork {
     layers: Vec<Layer>,
     learning_rate: f64,
     activation_function: ActivationFunction,
     final_activation: ActivationFunction,
+    loss_function: LossFunction,
 }
 
 impl NeuralNetwork {
@@ -65,6 +111,7 @@ impl NeuralNetwork {
         learning_rate: f64,
         activation_function: ActivationFunction,
         final_activation: ActivationFunction,
+        loss_function: LossFunction,
     ) -> Self {
         let mut layers = Vec::new();
         for i in 0..layer_sizes.len() - 1 {
@@ -75,13 +122,14 @@ impl NeuralNetwork {
             learning_rate,
             activation_function,
             final_activation,
+            loss_function,
         }
     }
 
     /// Performs a forward pass through the network.
     /// Each layer computes its output which is fed as input to the next layer.
     /// Returns the activated outputs of the final layer.
-    pub fn forward(&self, mut input: Vec<f64>) -> (Vec<f64>, Vec<Vec<f64>>) {
+    pub fn forward(&self, mut input: Vec<f64>) -> Vec<Vec<f64>> {
         let mut cache: Vec<Vec<f64>> = Vec::new();
         cache.push(input.clone());
         for (i, layer) in self.layers.iter().enumerate() {
@@ -94,69 +142,84 @@ impl NeuralNetwork {
             };
             cache.push(input.clone());
         }
-        (input, cache)
+        cache
     }
 
-    /// Performs one training step using backpropagation.
     ///
-    /// # Arguments
-    ///
-    /// * `cache` - A tuple containing the activations and pre-activation (z) values returned
-    ///             from `forward_with_cache`.
-    /// * `target` - The expected outputs.
-    pub fn backward_with_cache(&mut self, cache: Vec<Vec<f64>>, target: &[f64]) {
-        let activations = cache;
+    pub fn backpropogation(&mut self, cache: Vec<Vec<f64>>, target: &[f64]) {
+        // 1. Compute initial delta at the output layer.
+        // Get the output of the final layer.
+        println!(
+            "Target: {:?}, predicted: {:?}",
+            target,
+            cache[cache.len() - 1]
+        );
+        let output = &cache[cache.len() - 1];
+        let loss_grad = self.loss_function.gradient(output, target);
+        // Delta = loss gradient * derivative(final activation)
+        let mut delta: Vec<f64> = loss_grad
+            .iter()
+            .zip(output)
+            .map(|(lg, &o)| lg * self.final_activation.derivative(o))
+            .collect();
 
-        // --- Backpropagation ---
-        let mut deltas: Vec<Vec<f64>> = Vec::new();
-        let output = activations.last().unwrap();
-        // Compute the delta for the output layer. (Assuming mean squared error)
-        let mut delta = Vec::new();
-        for i in 0..output.len() {
-            let error = output[i] - target[i];
-            let deriv = self.final_activation.derivative(output[i]);
-            delta.push(error * deriv);
-        }
-        deltas.push(delta);
+        // 2. Iterate backwards over layers.
+        for i in (1..cache.len() - 1).rev() {
+            // cache[i] is the activation/output for this layer; cache[i-1] is the input coming into this layer.
+            let activations = &cache[i];
 
-        // Propagate the error back through the hidden layers.
-        for l in (0..self.layers.len() - 1).rev() {
-            let current_activation = &activations[l + 1];
-            let next_layer = &self.layers[l + 1];
-            let delta_next = deltas.last().unwrap();
-            let mut delta_this = Vec::new();
-            // For each neuron i in layer l accumulate errors from layer l+1.
-            for i in 0..self.layers[l].biases.len() {
-                let mut error_sum = 0.0;
-                for (j, weights_row) in next_layer.weights.iter().enumerate() {
-                    error_sum += weights_row[i] * delta_next[j];
+            // Get the corresponding layer.
+            // Adjust the index since the first cache element is the input.
+            let layer_index = i;
+
+            // Compute gradients for weights and biases.
+            // weight_gradient[j][k] = delta[j] * activation[k]
+            let mut weight_gradients = vec![vec![0.0; activations.len()]; delta.len()];
+            for j in 0..delta.len() {
+                for k in 0..activations.len() {
+                    weight_gradients[j][k] = delta[j] * activations[k];
                 }
-                let deriv = self.activation_function.derivative(current_activation[i]);
-                delta_this.push(error_sum * deriv);
             }
-            deltas.push(delta_this);
-        }
-        deltas.reverse();
-
-        // --- Update Weights and Biases ---
-        for l in 0..self.layers.len() {
-            let a_prev = &activations[l]; // activation from previous layer.
-            let delta_layer = &deltas[l];
-            let layer = &mut self.layers[l];
-            for i in 0..layer.weights.len() {
-                for j in 0..layer.weights[i].len() {
-                    let grad = delta_layer[i] * a_prev[j];
-                    // Update using gradient descent.
-                    layer.weights[i][j] -= self.learning_rate * grad;
+            println!("Delta: {:?}", delta);
+            println!("activations: {:?}", activations);
+            println!("Weight gradients: {:?}", weight_gradients);
+            // Update weights and biases.
+            for j in 0..self.layers[layer_index].weights.len() {
+                for k in 0..self.layers[layer_index].weights[j].len() {
+                    self.layers[layer_index].weights[j][k] -=
+                        self.learning_rate * weight_gradients[j][k];
                 }
-                // Bias update.
-                layer.biases[i] -= self.learning_rate * delta_layer[i];
+                // Update bias.
+                self.layers[layer_index].biases[j] -= self.learning_rate * delta[j];
             }
+
+            // 3. Propagate the error to previous layer if not at the first layer.
+            if layer_index > 0 {
+                // Calculate new delta for the previous layer.
+                let mut new_delta = vec![0.0; self.layers[layer_index - 1].weights.len()];
+                for k in 0..new_delta.len() {
+                    for j in 0..delta.len() {
+                        // Sum over the delta * weight contribution.
+                        new_delta[k] += delta[j] * self.layers[layer_index].weights[j][k];
+                    }
+                    // Multiply by derivative of activation function for the previous layer.
+                    let activation = cache[i][k];
+                    new_delta[k] *= self.activation_function.derivative(activation);
+                }
+                delta = new_delta;
+            }
+        }
+    }
+    pub fn train(&mut self, input: Vec<Vec<f64>>, target: Vec<Vec<f64>>) {
+        for (x, y) in input.iter().zip(target.iter()) {
+            let cache = self.forward(x.clone());
+            self.backpropogation(cache, y);
         }
     }
 }
 
 /// Represents a single layer in the neural network.
+#[derive(Clone, Debug)]
 pub struct Layer {
     pub weights: Vec<Vec<f64>>,
     pub biases: Vec<f64>,
@@ -200,6 +263,7 @@ mod tests {
             0.01,
             ActivationFunction::ReLU,
             ActivationFunction::Sigmoid,
+            LossFunction::MeanSquaredError,
         );
         // Check if the number of layers is correct.
         assert_eq!(nn.layers.len(), 3);
@@ -219,11 +283,13 @@ mod tests {
             0.01,
             ActivationFunction::ReLU,
             ActivationFunction::Sigmoid,
+            LossFunction::MeanSquaredError,
         );
         let input = vec![1.0, 2.0];
         let output = nn.forward(input);
         // Check that output length equals the size of the final layer.
-        assert_eq!(output.0.len(), 2);
+        assert_eq!(output.len(), 3);
+        assert_eq!(output.last().unwrap().len(), 2); // Final layer should have 2 outputs.
     }
 
     #[test]
@@ -233,17 +299,12 @@ mod tests {
             0.01,
             ActivationFunction::ReLU,
             ActivationFunction::Sigmoid,
+            LossFunction::MeanSquaredError,
         );
-        let input = vec![0.5, -0.5];
-        let target = vec![1.0, 0.0];
-        // Run a single training step.
-        nn.backward_with_cache(&input, &target);
-        // After training propagation, simply check that weights have been updated (not all zero).
-        let sum_weights: f64 = nn
-            .layers
-            .iter()
-            .flat_map(|layer| layer.weights.iter().flat_map(|row| row.iter()))
-            .sum();
-        assert!(sum_weights.abs() > 0.0);
+        let input = vec![vec![0.5, -0.5], vec![0.7, -0.5], vec![0.5, -0.7]];
+        let target = vec![vec![1.0, 0.0], vec![1.0, 0.0], vec![1.0, 0.0]];
+
+        // Run training
+        nn.train(input, target);
     }
 }
