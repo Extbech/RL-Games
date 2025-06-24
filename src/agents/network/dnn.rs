@@ -12,7 +12,7 @@ pub enum ActivationFunction {
     /// Tanh is defined as f(x) = (exp(x) - exp(-x)) / (exp(x) + exp(-x)).
     Tanh,
 }
-// this is a change
+
 impl ActivationFunction {
     /// Applies the activation function to the input value.
     pub fn apply(&self, x: f64) -> f64 {
