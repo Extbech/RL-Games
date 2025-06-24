@@ -1,7 +1,5 @@
 use rand::Rng;
 
-
-
 /// Enum representing different activation functions used in the neural network.
 pub enum ActivationFunction {
     /// Rectified Linear Unit (ReLU) activation function.
@@ -14,12 +12,18 @@ pub enum ActivationFunction {
     /// Tanh is defined as f(x) = (exp(x) - exp(-x)) / (exp(x) + exp(-x)).
     Tanh,
 }
-
+// this is a change
 impl ActivationFunction {
     /// Applies the activation function to the input value.
     pub fn apply(&self, x: f64) -> f64 {
         match self {
-            ActivationFunction::ReLU => if x < 0.0 { 0.0 } else { x },
+            ActivationFunction::ReLU => {
+                if x < 0.0 {
+                    0.0
+                } else {
+                    x
+                }
+            }
             ActivationFunction::Sigmoid => 1.0 / (1.0 + (-x).exp()),
             ActivationFunction::Tanh => x.tanh(),
         }
@@ -31,8 +35,12 @@ impl ActivationFunction {
     pub fn derivative(&self, activated: f64) -> f64 {
         match self {
             ActivationFunction::ReLU => {
-                if activated > 0.0 { 1.0 } else { 0.0 }
-            },
+                if activated > 0.0 {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
             ActivationFunction::Sigmoid => activated * (1.0 - activated),
             ActivationFunction::Tanh => 1.0 - activated.powi(2),
         }
@@ -52,12 +60,22 @@ impl NeuralNetwork {
     ///
     /// For example, layer_sizes = [4, 5, 3] creates a network with 4 inputs,
     /// one hidden layer with 5 neurons and an output layer with 3 neurons.
-    pub fn new(layer_sizes: Vec<usize>, learning_rate: f64, activation_function: ActivationFunction, final_activation: ActivationFunction) -> Self {
+    pub fn new(
+        layer_sizes: Vec<usize>,
+        learning_rate: f64,
+        activation_function: ActivationFunction,
+        final_activation: ActivationFunction,
+    ) -> Self {
         let mut layers = Vec::new();
         for i in 0..layer_sizes.len() - 1 {
             layers.push(Layer::new(layer_sizes[i], layer_sizes[i + 1]));
         }
-        NeuralNetwork { layers, learning_rate, activation_function, final_activation }
+        NeuralNetwork {
+            layers,
+            learning_rate,
+            activation_function,
+            final_activation,
+        }
     }
 
     /// Performs a forward pass through the network.
@@ -171,14 +189,18 @@ impl Layer {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_neural_network_creation() {
-        let nn = NeuralNetwork::new(vec![2, 3, 3, 2], 0.01, ActivationFunction::ReLU, ActivationFunction::Sigmoid);
+        let nn = NeuralNetwork::new(
+            vec![2, 3, 3, 2],
+            0.01,
+            ActivationFunction::ReLU,
+            ActivationFunction::Sigmoid,
+        );
         // Check if the number of layers is correct.
         assert_eq!(nn.layers.len(), 3);
     }
@@ -192,7 +214,12 @@ mod tests {
 
     #[test]
     fn test_forward_pass() {
-        let nn = NeuralNetwork::new(vec![2, 3, 2], 0.01, ActivationFunction::ReLU, ActivationFunction::Sigmoid);
+        let nn = NeuralNetwork::new(
+            vec![2, 3, 2],
+            0.01,
+            ActivationFunction::ReLU,
+            ActivationFunction::Sigmoid,
+        );
         let input = vec![1.0, 2.0];
         let output = nn.forward(input);
         // Check that output length equals the size of the final layer.
@@ -201,13 +228,20 @@ mod tests {
 
     #[test]
     fn test_train_step() {
-        let mut nn = NeuralNetwork::new(vec![2, 3, 2], 0.01, ActivationFunction::ReLU, ActivationFunction::Sigmoid);
+        let mut nn = NeuralNetwork::new(
+            vec![2, 3, 2],
+            0.01,
+            ActivationFunction::ReLU,
+            ActivationFunction::Sigmoid,
+        );
         let input = vec![0.5, -0.5];
         let target = vec![1.0, 0.0];
         // Run a single training step.
         nn.backward_with_cache(&input, &target);
         // After training propagation, simply check that weights have been updated (not all zero).
-        let sum_weights: f64 = nn.layers.iter()
+        let sum_weights: f64 = nn
+            .layers
+            .iter()
             .flat_map(|layer| layer.weights.iter().flat_map(|row| row.iter()))
             .sum();
         assert!(sum_weights.abs() > 0.0);
