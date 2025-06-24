@@ -2,25 +2,20 @@ use std::fmt::Write;
 
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 
-use crate::{agents::q_agent::QAgent, environment::Environment, Agent};
+use crate::{agents::q_agent::QAgent, environment::move_to_center::GridEnvironment, Agent, Environment, Step};
 
 /// The Trainer struct is responsible for managing the training process of the agent in the environment.
-pub struct Trainer {
-    pub agent: QAgent,
-    pub environment: Environment,
+pub struct Trainer<E: Environment, A: Agent<E>> {
+    pub environment: E,
+    pub agent: A,
 }
 
-impl Trainer {
+impl<E: Environment, A: Agent<E>> Trainer<E, A> {
     /// Creates a new Trainer with an initialized Agent and Environment.
-    pub fn new(rows: usize, cols: usize) -> Self {
-        if (rows % 2 == 0) || (cols % 2 == 0) {
-            panic!("Rows and columns must be odd numbers for the environment.");
-        }
-        Trainer {
-            agent: QAgent::new(rows, cols),
-            environment: Environment::new(rows, cols),
-        }
+    pub fn new(environment: E, agent: A) -> Self {
+        Self { environment, agent }
     }
+
     /// Trains the agent by running a specified number of episodes in the environment.
     /// Each episode consists of the agent taking actions in the environment until a terminal state is reached. e.g. the agent either won or lost.
     pub fn train(&mut self, episodes: u64) {
@@ -37,26 +32,20 @@ impl Trainer {
         );
 
         for episode in 1..=episodes {
-            self.environment.reset();
-            let mut state = self.environment.position;
-            let mut done = false;
+            let mut state = self.environment.reset();
 
-            while !done {
-                let action = self.agent.act(state);
-                self.environment.step(action);
-                let reward = self.environment.reward;
-                let next_state = self.environment.position;
+            loop {
+                let action = self.agent.act(state.clone());
+                let Step {is_final, reward, next_state} = self.environment.step(action);
 
                 // Update the Q-table using Q-learning update
-                self.agent.learn(state, action, reward, next_state);
+                self.agent.learn(state.clone(), action, reward, next_state.clone());
 
                 // Set the next state as current for the following iteration
                 state = next_state;
 
-                // If the state is Correct, consider the episode finished.
-                match self.environment.game_state {
-                    crate::environment::GameState::Started => (),
-                    crate::environment::GameState::Finished => done = true,
+                if is_final {
+                    break;
                 }
             }
             pb.set_position(episode);
