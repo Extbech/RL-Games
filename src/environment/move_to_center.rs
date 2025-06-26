@@ -11,7 +11,7 @@ pub enum MoveAction {
     Right,
 }
 
-impl Action for MoveAction {
+impl Action<'_> for MoveAction {
     const COUNT: usize = 4;
 
     /// Returns a random action from the available actions.
@@ -61,6 +61,16 @@ pub struct GridEnvironment {
     pub done: bool,
 }
 
+impl Serialize for GridEnvironment {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = vec![0.0; self.board.len() * self.board[0].len()];
+        state[self.position.0 * self.board[0].len() + self.position.1] = 1.0;
+        state.serialize(serializer)
+    }
+}
 impl GridEnvironment {
     /// Creates a new Environment with an initial position, empty board, and default values for reward and game state.
     pub fn new(rows: usize, cols: usize) -> Self {
@@ -89,7 +99,7 @@ impl GridEnvironment {
         }
     }
 
-    fn serialize(&self) -> Vec<f32> {
+    fn flatten(&self) -> Vec<f32> {
         // vec![self.position.0 as f32, self.position.1 as f32]
         let mut r = vec![0.0; self.board.len() * self.board[0].len()];
         r[self.position.0*self.board.len() + self.position.1] = 1.0;
@@ -111,7 +121,7 @@ impl Environment for GridEnvironment {
         );
         self.reward = 0.0;
         self.done = false;
-        self.serialize()
+        self.flatten()
     }
 
     /// Steps through the environment based on the action taken by the agent.
@@ -155,7 +165,7 @@ impl Environment for GridEnvironment {
                 }
             }
         }
-        Step { is_final: self.done, reward: Some(self.reward), next_state: self.serialize() }
+        Step { is_final: self.done, reward: Some(self.reward), next_state: self.flatten() }
     }
 
 }

@@ -10,3 +10,4 @@ serde = {version = "1.0.219", features = ["derive"]}
 actix-cors = "0.7.1"
 indicatif = "0.17.11"
 ordered-float = "5.0.0"
+serde_json = "1.0"

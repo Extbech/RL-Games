@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 
-use crate::{agents::q_agent::QAgent, environment::move_to_center::GridEnvironment, Agent, Environment, Step};
+use crate::{Agent, Environment, Step};
 
 /// The Trainer struct is responsible for managing the training process of the agent in the environment.
 pub struct Trainer<E: Environment, A: Agent<E>> {

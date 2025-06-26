@@ -1,16 +1,42 @@
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::{
-    collections::HashMap, io::{BufRead, BufReader, Write}, vec
+    collections::HashMap, io::{BufRead, BufReader}
 };
 use ordered_float::NotNan;
 
-use crate::{environment::move_to_center::{GridEnvironment, MoveAction}, Action, Agent, Environment};
+use crate::{Action, Agent, Environment};
 
+#[derive(Serialize)]
+struct QTable<E: Environment> {
+    sate_action_pairs: Vec<StateActionPair<E>>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct StateActionPair<E: Environment> {
+    state: Vec<f32>,
+    action: E::Action,
+    q_value: f32,
+}
+
+impl<E: Environment> QTable<E> {
+    fn from(val: HashMap::<(Vec<NotNan<f32>>, E::Action), f32>) -> Self {
+        QTable {
+            sate_action_pairs: val
+                .into_iter()
+                .map(|((state, action), q_value)| StateActionPair {
+                    state: state.into_iter().map(|f| f.into_inner()).collect(),
+                    action,
+                    q_value,
+                })
+                .collect(),}
+    }
+}
 /// The Agent struct represents the agent that is going to interact and learn from the environment.
 /// It contains methods for learning and acting with the environment and useful utils such as loading and saving Q-tables.
 pub struct QAgent<E: Environment> {
     /// Q-table is a 3D array where containing the Q-values for each state-action pair.
-    pub q_table: HashMap::<(Vec<NotNan<f32>>, E::Action), f32>,
+    q_table: HashMap::<(Vec<NotNan<f32>>, E::Action), f32>,
     /// Epsilon-greedy parameters for exploration vs exploitation ε where (0 ≤ ε ≤ 1)
     /// A higher epsilon means more exploration, while a lower epsilon means more exploitation.
     epsilon: f32,
@@ -38,6 +64,40 @@ impl<E: Environment> QAgent<E> {
             gamma: 0.9,
         }
     }
+    /// Saves the Q-table to a file in CSV format.
+    pub fn save_to_file(&self, file_path: &str) -> std::io::Result<()> {
+        serde_json::to_writer(
+            std::fs::File::create(file_path)?,
+            &QTable::<E>::from(self.q_table.clone()),
+        )?;
+        Ok(())
+    }   
+
+    // fn load(path: &str, rows: usize, cols: usize) -> Result<Self, std::io::Error>
+    // where
+    //     Self: Sized,
+    // {
+    //     let file = std::fs::File::open(path)?;
+    //     let reader = BufReader::new(file);
+    //     let mut agent = QAgent {
+    //         q_table: vec![vec![vec![0.0; 4]; cols]; rows],
+    //         epsilon: 0.2,
+    //         alpha: 0.1,
+    //         gamma: 0.9,
+    //     };
+    //     reader.lines().enumerate().for_each(|(i, val)| {
+    //         let line = val.unwrap();
+    //         if i > 0 {
+    //             let values: Vec<f32> = line
+    //                 .split(',')
+    //                 .map(|s| s.trim().parse().unwrap_or(0.0))
+    //                 .collect();
+    //             agent.q_table[(i - 1) / rows][(i - 1) % rows] =
+    //                 vec![values[0], values[1], values[2], values[3]];
+    //         }
+    //     });
+    //     Ok(agent)
+    // }
 }
 /*
 impl QAgent<GridEnvironment> {
@@ -135,48 +195,3 @@ impl<E: Environment> Agent<E> for QAgent<E> {
         best_action
     }
 }
-
-/*
-impl
-    fn save_to_file(&self, file_path: &str) -> std::io::Result<()> {
-        let mut file = std::fs::File::create(file_path)?;
-        writeln!(file, "Up, Down, Left, Right")?;
-        for row in self.q_table.iter() {
-            for col in row.iter() {
-                let line = col
-                    .iter()
-                    .map(|v| format!("{:.2}", v))
-                    .collect::<Vec<String>>()
-                    .join(",");
-                writeln!(file, "{}", line)?;
-            }
-        }
-        Ok(())
-    }
-
-    fn load(path: &str, rows: usize, cols: usize) -> Result<Self, std::io::Error>
-    where
-        Self: Sized,
-    {
-        let file = std::fs::File::open(path)?;
-        let reader = BufReader::new(file);
-        let mut agent = QAgent {
-            q_table: vec![vec![vec![0.0; 4]; cols]; rows],
-            epsilon: 0.2,
-            alpha: 0.1,
-            gamma: 0.9,
-        };
-        reader.lines().enumerate().for_each(|(i, val)| {
-            let line = val.unwrap();
-            if i > 0 {
-                let values: Vec<f32> = line
-                    .split(',')
-                    .map(|s| s.trim().parse().unwrap_or(0.0))
-                    .collect();
-                agent.q_table[(i - 1) / rows][(i - 1) % rows] =
-                    vec![values[0], values[1], values[2], values[3]];
-            }
-        });
-        Ok(agent)
-    }
-}*/

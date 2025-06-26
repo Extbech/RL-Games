@@ -1,10 +1,12 @@
 use std::hash::Hash;
 
+use serde::{Serialize};
+
 pub mod agents;
 pub mod environment;
 pub mod train;
 
-trait Action: Sized + Hash + Eq + Copy {
+pub trait Action<'de>: Sized + Hash + Eq + Copy + Serialize + 'static {
     const COUNT: usize;
 
     fn gen_random_state() -> Self;
@@ -19,14 +21,14 @@ trait Action: Sized + Hash + Eq + Copy {
 }
 
 
-struct Step {
+pub struct Step {
     is_final: bool,
     reward: Option<f32>, // Consider dropping the option
     next_state: Vec<f32>
 }
 
-trait Environment {
-    type Action: Action;
+pub trait Environment: Serialize {
+    type Action: Action<'static>;
 
     fn reset(&mut self) -> Vec<f32>;
 
