@@ -57,7 +57,7 @@ impl QAgent {
     pub fn save_to_file(&self, file_path: impl AsRef<Path>) -> std::io::Result<()> {
         create_dir_all(file_path.as_ref().parent().unwrap())?;
         let mut file = std::fs::File::create(file_path)?;
-        serde_json::to_writer(&mut file, &self.q_table)?;
+        serde_json::to_writer(&mut file, &self)?;
         Ok(())
     }
 
