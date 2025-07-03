@@ -1,4 +1,5 @@
 use rand::random_range;
+use serde::Serialize;
 use std::ops::Range;
 
 
@@ -19,7 +20,7 @@ pub trait Space: Default + Clone {
     fn continuous_dim(&self, d: usize) -> Option<Range<f32>>;
 }
 
-pub trait SpaceElem: Sized {
+pub trait SpaceElem: Sized + Serialize {
     /// The value at discrete dimension `d`.
     /// An element that returns `None` for `d`
     /// should also return `None` for greater values.

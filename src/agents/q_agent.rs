@@ -169,10 +169,10 @@ impl<E: Environment> Agent<E> for QAgent {
         let mut d = 0;
         while let Some(size) = env.action_space().discrete_dim(d) {
             action_space_size *= size;
-
             self.action_space.push(size);
             d += 1;
         }
+        self.action_space_size = action_space_size;
         self.q_table = vec![0.0; state_space_size * action_space_size];
         true
     }

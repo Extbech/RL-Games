@@ -1,6 +1,6 @@
 use actix_cors::Cors;
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
-use rust_rl::{agents::q_agent::QAgent, environment::move_to_center::GridEnvironment};
+use actix_web::{get, web, App, HttpResponse, HttpResponseBuilder, HttpServer, Responder};
+use rust_rl::{agents::q_agent::QAgent, environment::move_to_center::GridEnvironment, Environment};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -25,9 +25,20 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
+enum EnvironmentType {
+    Grid,
+}
+
+fn predict_all_handler<E: Environment>(mut response: HttpResponseBuilder,
+    agent: &QAgent,
+) -> HttpResponse {
+    response.json(agent.predict_all::<E>())
+}
+
 #[get("/predict_all")]
 async fn predict_all(agent: web::Data<QAgent>) -> impl Responder {
-    // Lock the agent and retrieve all predictions.
-    let predictions = agent.predict_all::<GridEnvironment>();
-    HttpResponse::Ok().json(predictions)
+    let env = EnvironmentType::Grid;
+    match env {
+        EnvironmentType::Grid => predict_all_handler::<GridEnvironment>(HttpResponse::Ok(), &agent),
+    }
 }
