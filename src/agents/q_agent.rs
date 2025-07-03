@@ -89,6 +89,12 @@ impl QAgent {
         let action_i = Self::space_elem_as_int(action, &self.action_space);
         self.q_table[state_i + action_i * self.state_space_size]
     }
+
+    pub fn serialize_q_table(&self) -> Vec<&[f32]> {
+        self.q_table
+            .chunks(self.state_space_size)
+            .collect::<Vec<&[f32]>>()
+    }
 }
 
 fn all_actions<A: Action>(action_space: &[usize]) -> impl Iterator<Item = A> + '_ {
