@@ -6,19 +6,44 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+
 type Direction = "Up" | "Down" | "Left" | "Right";
 type QTable = Array<Array<Direction>>;
+type Inner = {
+  position: Array<number>
+}
 
 export const QTable = () => {
   const [data, setData] = useState<QTable | null>(null);
 
   const fetchData = async () => {
     try {
-      const response = await fetch("http://localhost:8000/q_table");
+      const response = await fetch("http://localhost:8000/predict_all");
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-      setData(await response.json());
+      let result: Array<[Inner, Direction]> = await response.json();
+      console.log(result);
+      let qTable: Array<Array<Direction>> = [];
+      let temp: Array<Direction> = [];
+      let prevRow = 0;
+      
+      for (let i = 0; i < result.length; i++) {
+        if (i === result.length - 1) {
+          temp.push(result[i][1]);
+          qTable.push(temp);
+          break;
+        }
+        if (result[i][0].position[0] != prevRow) {
+          console.log("This was hit at", prevRow, result[i][0].position[0]);
+          qTable.push(temp);
+          temp = [];
+          prevRow = result[i][0].position[0];
+        }
+        temp.push(result[i][1]);
+      }
+      console.log("Qtable formatting lul", qTable);
+      setData(qTable);
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error);
     }
