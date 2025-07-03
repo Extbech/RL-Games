@@ -37,15 +37,9 @@ impl SpaceElem for MoveAction {
     fn continuous(&self, _d: usize) -> Option<f32> {
         None
     }
-}
 
-impl Action for MoveAction {
-    fn try_build(
-        _space: &impl Space,
-        discrete: &[usize],
-        _continuous: &[f32],
-    ) -> Option<Self> {
-        if discrete.len() == 1 {
+    fn try_build(_: &impl Space, discrete: &[usize], continuous: &[f32]) -> Option<Self> {
+        if discrete.len() == 1 && continuous.is_empty() {
             match discrete[0] {
                 0 => Some(Self::Up),
                 1 => Some(Self::Down),
@@ -57,13 +51,15 @@ impl Action for MoveAction {
             None
         }
     }
+}
 
+impl Action for MoveAction {
     fn is_valid(&self, space: &impl Space) -> bool {
         space.discrete_dim(0).is_some() && space.discrete_dim(0) == Some(4)
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Board {
     position: (usize, usize),
 }
@@ -79,6 +75,16 @@ impl SpaceElem for Board {
 
     fn continuous(&self, _d: usize) -> Option<f32> {
         None
+    }
+
+    fn try_build(_: &impl Space, discrete: &[usize], continuous: &[f32]) -> Option<Self> {
+        if discrete.len() == 2 && continuous.is_empty() {
+            Some(Self {
+                position: (discrete[0], discrete[1]),
+            })
+        } else {
+            None
+        }
     }
 }
 

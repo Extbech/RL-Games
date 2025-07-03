@@ -1,8 +1,6 @@
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::create_dir_all, path::Path, vec
-};
+use std::{fs::create_dir_all, path::Path, vec};
 
 use crate::{Action, Agent, Environment, Space, SpaceElem};
 
@@ -27,6 +25,8 @@ pub struct QAgent {
     state_space_size: usize,
     /// Action space
     action_space: Vec<usize>,
+    /// Action space size
+    action_space_size: usize,
 }
 
 const EPSILON_DEFAULT: f32 = 0.05;
@@ -51,6 +51,7 @@ impl QAgent {
             state_space: Vec::new(),
             state_space_size: 0,
             action_space: Vec::new(),
+            action_space_size: 0,
         }
     }
 
@@ -68,7 +69,6 @@ impl QAgent {
         let file = std::fs::File::open(file_path)?;
         Ok(serde_json::from_reader(file)?)
     }
-
 
     fn space_elem_as_int<El: SpaceElem>(elem: &El, state_space: &[usize]) -> usize {
         let mut state_i = 0;
@@ -90,11 +90,48 @@ impl QAgent {
         self.q_table[state_i + action_i * self.state_space_size]
     }
 
+    pub fn predict_all<E:Environment>(&self) -> Vec<(E::State,E::Action)> {
+        let mut predictions = vec![];
+        for (action_vals, state) in self
+            .q_table
+            .chunks(self.action_space_size)
+            .zip(all_elems_as_vec(&self.state_space))
+        {
+            let mut best_action = Vec::new();
+            let mut best_value = f32::MIN;
+            for (val, action) in action_vals.iter().zip(all_elems_as_vec(&self.action_space)) {
+                if val > &best_value {
+                    best_action = action;
+                    best_value = *val;
+                }
+            }
+            let state = E::State::try_build(&self.state_space.as_slice(), &state, &[]).unwrap();
+            let best_action = E::Action::try_build(&self.action_space.as_slice(), &best_action, &[]).unwrap();
+            predictions.push((state, best_action));
+        }
+        predictions
+    }
+
     pub fn serialize_q_table(&self) -> Vec<&[f32]> {
         self.q_table
             .chunks(self.state_space_size)
             .collect::<Vec<&[f32]>>()
     }
+}
+
+fn all_elems_as_vec(space: &[usize]) -> impl Iterator<Item = Vec<usize>> + '_ {
+    let mut indices = vec![0; space.len()];
+    let max_indices: Vec<usize> = space.iter().map(|&s| s - 1).collect();
+    std::iter::from_fn(move || {
+        for i in (0..indices.len()).rev() {
+            if indices[i] < max_indices[i] {
+                indices[i] += 1;
+                return Some(indices.clone());
+            }
+            indices[i] = 0;
+        }
+        None
+    })
 }
 
 fn all_actions<A: Action>(action_space: &[usize]) -> impl Iterator<Item = A> + '_ {
@@ -112,7 +149,7 @@ fn all_actions<A: Action>(action_space: &[usize]) -> impl Iterator<Item = A> + '
     })
 }
 
-impl<E: Environment> Agent<E> for QAgent  {
+impl<E: Environment> Agent<E> for QAgent {
     fn try_init(&mut self, env: &E) -> bool {
         if env.state_space().continuous_dim(0).is_some()
             || env.action_space().continuous_dim(0).is_some()
@@ -121,20 +158,22 @@ impl<E: Environment> Agent<E> for QAgent  {
             return false;
         }
         let mut d = 0;
-        let mut state_action_pairs = 1;
+        let mut state_space_size = 1;
         while let Some(size) = env.state_space().discrete_dim(d) {
-            state_action_pairs *= size;
+            state_space_size *= size;
             self.state_space.push(size);
             d += 1;
         }
-        self.state_space_size = state_action_pairs;
+        self.state_space_size = state_space_size;
+        let mut action_space_size = 1;
         let mut d = 0;
         while let Some(size) = env.action_space().discrete_dim(d) {
-            state_action_pairs *= size;
+            action_space_size *= size;
+
             self.action_space.push(size);
             d += 1;
         }
-        self.q_table = vec![0.0; state_action_pairs];
+        self.q_table = vec![0.0; state_space_size * action_space_size];
         true
     }
 
@@ -176,13 +215,7 @@ impl<E: Environment> Agent<E> for QAgent  {
     /// - `action`: The action taken.
     /// - `reward`: The immediate reward received.
     /// - `next_state`: The state resulting after taking the action.
-    fn learn(
-        &mut self,
-        state: &E::State,
-        action: &E::Action,
-        reward: f32,
-        next_state: &E::State,
-    ) {
+    fn learn(&mut self, state: &E::State, action: &E::Action, reward: f32, next_state: &E::State) {
         let mut max_q_next = 0.0;
         for a in all_actions::<E::Action>(&self.action_space) {
             let q_val = self.q_val(next_state, &a);

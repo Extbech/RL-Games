@@ -19,7 +19,7 @@ pub trait Space: Default + Clone {
     fn continuous_dim(&self, d: usize) -> Option<Range<f32>>;
 }
 
-pub trait SpaceElem {
+pub trait SpaceElem: Sized {
     /// The value at discrete dimension `d`.
     /// An element that returns `None` for `d`
     /// should also return `None` for greater values.
@@ -29,13 +29,14 @@ pub trait SpaceElem {
     /// An element that returns `None` for `d`
     /// should also return `None` for greater values.
     fn continuous(&self, d: usize) -> Option<f32>;
+
+    /// Attempts to build an element from the given discrete and continuous values.
+    fn try_build(space: &impl Space, discrete: &[usize], continuous: &[f32]) -> Option<Self>;
 }
 
 // TODO: Reconsider sized bound if we want to use trait objects
 // In that case we should return a Option<Box<Self>> instead of Option<Self>
-pub trait Action: SpaceElem + Sized + Default {
-    fn try_build(space: &impl Space, discrete: &[usize], continuous: &[f32]) -> Option<Self>;
-
+pub trait Action: SpaceElem + Default {
     fn gen_random(space: &impl Space) -> Option<Self> {
         let mut discrete_dims = vec![];
         let mut d = 0;
