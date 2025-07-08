@@ -90,15 +90,12 @@ impl QAgent {
         self.q_table[state_i * self.action_space_size + action_i]
     }
 
-    pub fn predict_all<E:Environment>(&self) -> Vec<(E::State,E::Action)> {
+    pub fn predict_all<E: Environment>(&self) -> Vec<(E::State, E::Action)> {
         let mut predictions = vec![];
         for state in all_elems_as_vec(&self.state_space) {
             let state = E::State::try_build(&self.state_space.as_slice(), &state, &[]).unwrap();
             let prediction = <QAgent as Agent<E>>::predict(&self, &state);
-            predictions.push((
-                state,
-                prediction,
-            ));
+            predictions.push((state, prediction));
         }
         predictions
     }
@@ -113,8 +110,7 @@ impl QAgent {
 fn all_elems_as_vec(space: &[usize]) -> impl Iterator<Item = Vec<usize>> + '_ {
     let mut indices = vec![0; space.len()];
     let max_indices: Vec<usize> = space.iter().map(|&s| s - 1).collect();
-    std::iter::once(vec![0; space.len()]).chain(
-     std::iter::from_fn(move || {
+    std::iter::once(vec![0; space.len()]).chain(std::iter::from_fn(move || {
         for i in (0..indices.len()).rev() {
             if indices[i] < max_indices[i] {
                 indices[i] += 1;

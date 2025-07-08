@@ -1,10 +1,8 @@
 use crate::{Space, SpaceElem};
-use rand::{rng, prelude::*};
+use rand::{prelude::*, rng};
 use serde::{Deserialize, Serialize};
 
 use crate::{Action, Environment, Step};
-
-pub const GRID_SIZE: (usize, usize) = (9, 9);
 
 /// The Action enum represents the possible actions the agent can take in the environment.
 #[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Hash)]
@@ -138,13 +136,8 @@ impl GridEnvironment {
     /// Creates a new Environment with an initial position, empty board, and default values for reward and game state.
     pub fn new(rows: usize, cols: usize) -> Self {
         GridEnvironment {
-            board: Board {
-                position: (0, 0)
-            },
-            shape: Shape {
-                rows,
-                cols,
-            },
+            board: Board { position: (0, 0) },
+            shape: Shape { rows, cols },
             reward: 0.0,
             done: false,
         }
@@ -155,7 +148,6 @@ impl GridEnvironment {
     /// Otherwise, it calculates the reward based on the Euclidean distance from the center of the board.
     /// Using the formula `r = 1 / √(x2 – x1)^2 + (y2 – y1)^2`
     fn calc_reward(&mut self) {
-
         if self.board.position.0 == self.shape.cols / 2
             && self.board.position.1 == self.shape.rows / 2
         {
@@ -164,12 +156,8 @@ impl GridEnvironment {
         } else {
             self.reward = 1.
                 / f32::sqrt(
-                    (self.board.position.0 as f32
-                        - (self.shape.cols / 2) as f32)
-                        .powi(2)
-                        + (self.board.position.1 as f32
-                            - (self.shape.rows / 2) as f32)
-                            .powi(2),
+                    (self.board.position.0 as f32 - (self.shape.cols / 2) as f32).powi(2)
+                        + (self.board.position.1 as f32 - (self.shape.rows / 2) as f32).powi(2),
                 );
         }
     }
@@ -191,7 +179,6 @@ impl Environment for GridEnvironment {
 
     /// Resets the environment and sets a new random starting position so that our agent does not always start in the top-left corner.
     fn reset(&mut self) -> &Self::State {
-
         self.reward = 0.0;
         self.done = false;
         self.board.position = (self.shape.rows / 2, self.shape.cols / 2);

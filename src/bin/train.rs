@@ -1,10 +1,12 @@
 use std::time::Instant;
 
 use rust_rl::{
-    agents::q_agent::QAgent, environment::move_to_center::{Board, GridEnvironment}, train, Agent
+    agents::q_agent::QAgent,
+    environment::move_to_center::{Board, GridEnvironment},
+    train, Agent,
 };
 
-const GRID_SIZE: (usize, usize) = (9, 9);
+const GRID_SIZE: (usize, usize) = (3, 3);
 
 fn main() {
     let start = Instant::now();
