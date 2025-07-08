@@ -1,4 +1,4 @@
-use crate::{Space, SpaceElem};
+use crate::{Space, SpaceElem, State, StateSpace};
 use serde::{Deserialize, Serialize};
 
 use crate::{Action, Environment, Step};
@@ -97,6 +97,13 @@ impl SpaceElem for Board {
         }
     }
 }
+
+impl State for Board {
+    fn current_player(&self) -> usize {
+        todo!();
+    }
+}
+
 #[derive(Default, Clone)]
 pub struct Shape;
 
@@ -111,6 +118,12 @@ impl Space for Shape {
 
     fn continuous_dim(&self, _d: usize) -> Option<std::ops::Range<f32>> {
         None
+    }
+}
+
+impl StateSpace for Shape {
+    fn player_count(&self) -> usize {
+        2 // Tic Tac Toe always has two players: X and O
     }
 }
 
@@ -137,7 +150,7 @@ pub enum TicTacPlayer {
 
 pub struct TicTacEnvironment {
     pub board: Board,
-    pub reward: f32,
+    pub reward: [f32; 2],
     pub done: bool,
     pub player: TicTacPlayer,
 }
@@ -148,7 +161,7 @@ impl TicTacEnvironment {
             board: Board {
                 cells: [[CellState::Empty; 3]; 3],
             },
-            reward: 0.0,
+            reward: [0.0,0.0],
             done: false,
             player: TicTacPlayer::X,
         }
@@ -160,15 +173,27 @@ impl TicTacEnvironment {
             if self.board.cells[i][0] == self.board.cells[i][1]
                 && self.board.cells[i][1] == self.board.cells[i][2]
             {
-                if self.board.cells[i][0] != CellState::Empty {
-                    self.reward = 1.0; // Win
+                match self.board.cells[i][0] {
+                    CellState::X => {
+                        self.reward = [1.0, -1.0]; // X wins
+                    }
+                    CellState::O => {
+                        self.reward = [-1.0, 1.0]; // O wins
+                    }
+                    CellState::Empty => continue, // No winner yet
                 }
             }
             if self.board.cells[0][i] == self.board.cells[1][i]
                 && self.board.cells[1][i] == self.board.cells[2][i]
             {
-                if self.board.cells[0][i] != CellState::Empty {
-                    self.reward = 1.0; // Win
+                match self.board.cells[0][i] {
+                    CellState::X => {
+                        self.reward = [1.0, -1.0]; // X wins
+                    }
+                    CellState::O => {
+                        self.reward = [-1.0, 1.0]; // O wins
+                    }
+                    CellState::Empty => continue, // No winner yet
                 }
             }
         }
@@ -177,8 +202,14 @@ impl TicTacEnvironment {
             || (self.board.cells[0][2] == self.board.cells[1][1]
                 && self.board.cells[1][1] == self.board.cells[2][0])
         {
-            if self.board.cells[1][1] != CellState::Empty {
-                self.reward = 1.0; // Win
+            match self.board.cells[1][1] {
+                CellState::X => {
+                    self.reward = [1.0, -1.0]; // X wins
+                }
+                CellState::O => {
+                    self.reward = [-1.0, 1.0]; // O wins
+                }
+                CellState::Empty => return, // No winner yet
             }
         }
     }
@@ -200,7 +231,7 @@ impl Environment for TicTacEnvironment {
 
     /// Resets the environment and sets a new random starting position so that our agent does not always start in the top-left corner.
     fn reset(&mut self) -> &Self::State {
-        self.reward = 0.0;
+        self.reward = [0.0,0.0];
         self.done = false;
         self.board = Board {
             cells: [[CellState::Empty; 3]; 3],
@@ -218,7 +249,8 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::O;
                 } else {
-                    self.reward = -1.0; // Invalid move
+                    self.reward = [-1.0,1.0]; // Invalid move
+                    self.done = true;
                 }
             }
             TicTacPlayer::O => {
@@ -227,13 +259,14 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::X;
                 } else {
-                    self.reward = -1.0; // Invalid move
+                    self.reward = [1.0,-1.0]; // Invalid move
+                    self.done = true;
                 }
             }
         }
         Step {
             is_final: self.done,
-            reward: self.reward,
+            reward: &self.reward,
             next_state: &self.board,
         }
     }

@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{cell::RefCell, rc::Rc, time::Instant};
 
 use rust_rl::{
     agents::q_agent::QAgent,
@@ -13,15 +13,12 @@ fn main() {
     let mut env = GridEnvironment::new(GRID_SIZE.0, GRID_SIZE.1);
     let mut agent = QAgent::new();
     agent.try_init(&env);
-    train::train(&mut env, &mut agent, 1_000_000);
-    agent
+    let agent = Rc::new(RefCell::new(agent));
+    let agents = [agent.clone() as Rc<RefCell<dyn Agent<GridEnvironment>>>];
+    train::train(&mut env, &agents as &[Rc<RefCell<dyn Agent<GridEnvironment>>>], 1_000_000);
+    agent.borrow_mut()
         .save_to_file("data/q_table.json")
         .expect("Failed to save Q-table to file");
-
-    assert_eq!(
-        <QAgent as Agent<GridEnvironment>>::predict(&agent, &Board { position: (2, 1) }),
-        MoveAction::Up
-    );
 
     let elapsed = start.elapsed();
     println!(

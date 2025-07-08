@@ -1,4 +1,6 @@
-use crate::{Space, SpaceElem};
+use core::slice;
+
+use crate::{Space, SpaceElem, State, StateSpace};
 use rand::{prelude::*, rng};
 use serde::{Deserialize, Serialize};
 
@@ -86,6 +88,12 @@ impl SpaceElem for Board {
     }
 }
 
+impl State for Board {
+    fn current_player(&self) -> usize {
+        0 // In this simple environment, we assume a single player
+    }
+}
+
 #[derive(Default, Clone)]
 pub struct Shape {
     rows: usize,
@@ -103,6 +111,12 @@ impl Space for Shape {
 
     fn continuous_dim(&self, _d: usize) -> Option<std::ops::Range<f32>> {
         None
+    }
+}
+
+impl StateSpace for Shape {
+    fn player_count(&self) -> usize {
+        1 // This environment is designed for a single agent
     }
 }
 
@@ -236,7 +250,7 @@ impl Environment for GridEnvironment {
         }
         Step {
             is_final: self.done,
-            reward: self.reward,
+            reward: slice::from_ref(&self.reward),
             next_state: &self.board,
         }
     }

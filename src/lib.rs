@@ -86,14 +86,22 @@ pub trait Action: SpaceElem + Default {
 
 pub struct Step<'a, E: Environment + ?Sized> {
     is_final: bool,
-    reward: f32,
+    reward: &'a [f32],
     next_state: &'a E::State,
 }
 
+trait StateSpace: Space {
+    fn player_count(&self) -> usize;
+}
+
+trait State: SpaceElem + Clone {
+    fn current_player(&self) -> usize;
+}
+
 pub trait Environment {
-    type StateSpace: Space;
+    type StateSpace: StateSpace;
     type ActionSpace: Space;
-    type State: SpaceElem + Clone;
+    type State: State;
     type Action: Action;
 
     fn state_space(&self) -> &Self::StateSpace;
