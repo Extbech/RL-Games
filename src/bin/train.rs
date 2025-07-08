@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use rust_rl::{
     agents::q_agent::QAgent,
-    environment::move_to_center::{Board, GridEnvironment},
+    environment::move_to_center::{Board, GridEnvironment, MoveAction},
     train, Agent,
 };
 
@@ -17,6 +17,11 @@ fn main() {
     agent
         .save_to_file("data/q_table.json")
         .expect("Failed to save Q-table to file");
+
+    assert_eq!(
+        <QAgent as Agent<GridEnvironment>>::predict(&agent, &Board { position: (2, 1) }),
+        MoveAction::Up
+    );
 
     let elapsed = start.elapsed();
     println!(
