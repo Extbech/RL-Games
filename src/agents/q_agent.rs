@@ -81,33 +81,24 @@ impl QAgent {
     fn q_val_mut(&mut self, state: &impl SpaceElem, action: &impl Action) -> &mut f32 {
         let state_i = Self::space_elem_as_int(state, &self.state_space);
         let action_i = Self::space_elem_as_int(action, &self.action_space);
-        &mut self.q_table[state_i + action_i * self.state_space_size]
+        &mut self.q_table[state_i * self.action_space_size + action_i]
     }
 
     fn q_val(&self, state: &impl SpaceElem, action: &impl Action) -> f32 {
         let state_i = Self::space_elem_as_int(state, &self.state_space);
         let action_i = Self::space_elem_as_int(action, &self.action_space);
-        self.q_table[state_i + action_i * self.state_space_size]
+        self.q_table[state_i * self.action_space_size + action_i]
     }
 
     pub fn predict_all<E:Environment>(&self) -> Vec<(E::State,E::Action)> {
         let mut predictions = vec![];
-        for (action_vals, state) in self
-            .q_table
-            .chunks(self.action_space_size)
-            .zip(all_elems_as_vec(&self.state_space))
-        {
-            let mut best_action = Vec::new();
-            let mut best_value = f32::MIN;
-            for (val, action) in action_vals.iter().zip(all_elems_as_vec(&self.action_space)) {
-                if val > &best_value {
-                    best_action = action;
-                    best_value = *val;
-                }
-            }
+        for state in all_elems_as_vec(&self.state_space) {
             let state = E::State::try_build(&self.state_space.as_slice(), &state, &[]).unwrap();
-            let best_action = E::Action::try_build(&self.action_space.as_slice(), &best_action, &[]).unwrap();
-            predictions.push((state, best_action));
+            let prediction = <QAgent as Agent<E>>::predict(&self, &state);
+            predictions.push((
+                state,
+                prediction,
+            ));
         }
         predictions
     }
@@ -122,7 +113,8 @@ impl QAgent {
 fn all_elems_as_vec(space: &[usize]) -> impl Iterator<Item = Vec<usize>> + '_ {
     let mut indices = vec![0; space.len()];
     let max_indices: Vec<usize> = space.iter().map(|&s| s - 1).collect();
-    std::iter::from_fn(move || {
+    std::iter::once(vec![0; space.len()]).chain(
+     std::iter::from_fn(move || {
         for i in (0..indices.len()).rev() {
             if indices[i] < max_indices[i] {
                 indices[i] += 1;
@@ -131,7 +123,14 @@ fn all_elems_as_vec(space: &[usize]) -> impl Iterator<Item = Vec<usize>> + '_ {
             indices[i] = 0;
         }
         None
-    })
+    }))
+}
+
+#[test]
+fn test_all_elems_as_vec() {
+    let space = vec![3, 3];
+    let v = all_elems_as_vec(&space).collect::<Vec<_>>();
+    assert_eq!(v.len(), 9);
 }
 
 fn all_actions<A: Action>(action_space: &[usize]) -> impl Iterator<Item = A> + '_ {
@@ -216,7 +215,7 @@ impl<E: Environment> Agent<E> for QAgent {
     /// - `reward`: The immediate reward received.
     /// - `next_state`: The state resulting after taking the action.
     fn learn(&mut self, state: &E::State, action: &E::Action, reward: f32, next_state: &E::State) {
-        let mut max_q_next = 0.0;
+        let mut max_q_next = f32::MIN;
         for a in all_actions::<E::Action>(&self.action_space) {
             let q_val = self.q_val(next_state, &a);
             if q_val > max_q_next {

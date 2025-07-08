@@ -61,7 +61,7 @@ impl Action for MoveAction {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Board {
-    position: (usize, usize),
+    pub position: (usize, usize),
 }
 
 impl SpaceElem for Board {
@@ -194,9 +194,9 @@ impl Environment for GridEnvironment {
 
         self.reward = 0.0;
         self.done = false;
-        self.board.position = (0, 0);
-        while self.board.position.0 == 0
-            && self.board.position.1 == 0
+        self.board.position = (self.shape.rows / 2, self.shape.cols / 2);
+        while self.board.position.0 == self.shape.rows / 2
+            && self.board.position.1 == self.shape.cols / 2
         {
             self.board.position = (
                 rng().random_range(0..self.shape.cols),

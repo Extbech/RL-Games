@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use rust_rl::{
-    agents::q_agent::QAgent, environment::move_to_center::GridEnvironment, train, Agent
+    agents::q_agent::QAgent, environment::move_to_center::{Board, GridEnvironment}, train, Agent
 };
 
 const GRID_SIZE: (usize, usize) = (9, 9);
@@ -11,7 +11,7 @@ fn main() {
     let mut env = GridEnvironment::new(GRID_SIZE.0, GRID_SIZE.1);
     let mut agent = QAgent::new();
     agent.try_init(&env);
-    train::train(&mut env, &mut agent, 100_000);
+    train::train(&mut env, &mut agent, 10_000_000);
     agent
         .save_to_file("data/q_table.json")
         .expect("Failed to save Q-table to file");
