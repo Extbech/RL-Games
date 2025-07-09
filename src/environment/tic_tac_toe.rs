@@ -59,6 +59,7 @@ impl CellState {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Board {
     pub cells: [[CellState; 3]; 3],
+    pub current_player: TicTacPlayer,
 }
 
 impl SpaceElem for Board {
@@ -83,8 +84,16 @@ impl SpaceElem for Board {
 
     fn try_build(_: &impl Space, discrete: &[usize], continuous: &[f32]) -> Option<Self> {
         if discrete.len() == 9 && continuous.is_empty() {
+            let x_cells = discrete.iter().filter(|&&x| x == 1).count();
+            let o_cells = discrete.iter().filter(|&&x| x == 2).count();
+            let current_player = match x_cells as isize - o_cells as isize {
+                0 => TicTacPlayer::X, // X starts first
+                1 => TicTacPlayer::O, // O's turn
+                _ => return None, // Invalid state
+            };
             let mut temp = Self {
                 cells: [[CellState::Empty; 3]; 3],
+                current_player
             };
             for n in discrete.iter().enumerate() {
                 let row = n.0 / 3;
@@ -100,7 +109,10 @@ impl SpaceElem for Board {
 
 impl State for Board {
     fn current_player(&self) -> usize {
-        todo!();
+        match self.current_player {
+            TicTacPlayer::X => 0,
+            TicTacPlayer::O => 1,
+        }
     }
 }
 
@@ -143,6 +155,8 @@ impl Space for TicTacActionSpace {
         None
     }
 }
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum TicTacPlayer {
     X,
     O,
@@ -160,6 +174,7 @@ impl TicTacEnvironment {
         TicTacEnvironment {
             board: Board {
                 cells: [[CellState::Empty; 3]; 3],
+                current_player: TicTacPlayer::X, // X starts first
             },
             reward: [0.0,0.0],
             done: false,
@@ -231,11 +246,7 @@ impl Environment for TicTacEnvironment {
 
     /// Resets the environment and sets a new random starting position so that our agent does not always start in the top-left corner.
     fn reset(&mut self) -> &Self::State {
-        self.reward = [0.0,0.0];
-        self.done = false;
-        self.board = Board {
-            cells: [[CellState::Empty; 3]; 3],
-        };
+        *self = TicTacEnvironment::new();
         &self.board
     }
 
