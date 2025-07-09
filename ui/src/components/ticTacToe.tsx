@@ -61,28 +61,28 @@ export const TicTacToe = () => {
                   const newCells = data.cells.map((r, rIndex) =>
                     r.map((c, cIndex) =>
                       rIndex === rowIndex && cIndex === cellIndex
-                        ? data.currentPlayer
+                        ? data.current_player
                         : c
                     )
                   );
                   setData({
                     ...data,
                     cells: newCells,
-                    currentPlayer: data.currentPlayer === "X" ? "O" : "X",
+                    current_player: data.current_player === "X" ? "O" : "X",
                   });
                   const agent_prediction = await predictTicTacToe(data);
                   const newCellsAfterPrediction = data.cells.map((r, rIndex) =>
                     r.map((c, cIndex) =>
                       rIndex === agent_prediction[0] &&
                       cIndex === agent_prediction[1]
-                        ? data.currentPlayer
+                        ? data.current_player
                         : c
                     )
                   );
                   setData({
                     ...data,
                     cells: newCellsAfterPrediction,
-                    currentPlayer: data.currentPlayer === "X" ? "O" : "X",
+                    current_player: data.current_player === "X" ? "O" : "X",
                   });
                 }
               }}

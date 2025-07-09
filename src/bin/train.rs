@@ -1,7 +1,7 @@
 use std::{cell::RefCell, env::args, rc::Rc, time::Instant};
 
 use rust_rl::{
-    agents::q_agent::QAgent,
+    agents::{q_agent::QAgent, random_agent},
     environment::{move_to_center::GridEnvironment, tic_tac_toe::TicTacEnvironment},
     train, Agent,
 };
@@ -21,13 +21,21 @@ fn main() {
         }
         "tic-tac-toe" => {
             let mut env = TicTacEnvironment::new();
+            let random_agent = Rc::new(RefCell::new(random_agent::RandomAgent::<TicTacEnvironment>::new()));
             agent.borrow_mut().try_init(&env);
             let agents = [agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
-                          agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>];
+                          random_agent.clone()];
             train::train(
                 &mut env,
                 &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
-                1_000_000,
+                10_000_000,
+            );
+            let agents = [random_agent.clone(),
+                agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>];
+            train::train(
+                &mut env,
+                &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
+                10_000_000,
             );
         }
         _ => {
@@ -43,7 +51,7 @@ fn main() {
 
     let elapsed = start.elapsed();
     println!(
-        "Training completed and Q-table saved to data/q_table.csv in {:?}",
+        "Training completed and Q-table saved to data/q_table.json in {:?}",
         elapsed
     );
 }

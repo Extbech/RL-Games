@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 use actix_cors::Cors;
 use actix_web::{
     get,
-    web::{self},
+    web::{self, Query},
     App, HttpResponse, HttpResponseBuilder, HttpServer, Responder,
 };
 use rust_rl::{
@@ -59,21 +61,25 @@ async fn predict_all(agent: web::Data<QAgent>) -> impl Responder {
     }
 }
 
-#[get("/predict/{env}/{state}")]
+#[get("/predict/{env}")]
 async fn predict(
     agent: web::Data<QAgent>,
-    path: web::Path<(EnvironmentType, String)>,
+    path: web::Path<EnvironmentType>,
+    query: Query<HashMap<String, String>>,
 ) -> impl Responder {
-    let (env, state) = path.into_inner();
+    let env = path.into_inner();
+    let Some(state) = query.get("state") else {
+        return HttpResponse::BadRequest().body("Missing 'state' query parameter");
+    };
     match env {
         EnvironmentType::TicTacToe => {
-            let obj = serde_json::from_str::<tic_tac_toe::Board>(state.as_str())
+            let obj = serde_json::from_str::<tic_tac_toe::Board>(&state)
                 .expect("Failed to deserialize TicTacEnvironment");
             let res = <QAgent as Agent<TicTacEnvironment>>::predict(&agent, &obj);
             HttpResponse::Ok().json(res)
         }
         EnvironmentType::Grid => {
-            let obj = serde_json::from_str::<move_to_center::Board>(state.as_str())
+            let obj = serde_json::from_str::<move_to_center::Board>(&state)
                 .expect("Failed to deserialize GridEnvironment");
             let res = <QAgent as Agent<GridEnvironment>>::predict(&agent, &obj);
             HttpResponse::Ok().json(res)

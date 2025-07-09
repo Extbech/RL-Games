@@ -5,13 +5,13 @@ export const initTicTacToeBoard = (): TicTacToeBoard => {
         cells: Array(3)
         .fill(null)
         .map(() => Array(3).fill("Empty")),
-        currentPlayer: "X",
+        current_player: "X",
     };
 }
 
 export const predictTicTacToe = async (board: TicTacToeBoard): Promise<TicTacAction> => {
     // Make a GET request to the server to predict the next move
-    const response = await fetch(`http://localhost:8000/predict?env=TicTacToe&state=${JSON.stringify(board)}`, {
+    const response = await fetch(`http://localhost:8000/predict/TicTacToe?state=${JSON.stringify(board)}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

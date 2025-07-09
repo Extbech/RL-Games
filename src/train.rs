@@ -31,6 +31,7 @@ pub fn train<E: Environment>(env: &mut E, agents: &[Rc<RefCell<dyn Agent<E>>>], 
             if let Some((prev_state, action)) = &prev[current_player] {
                 // If the previous state is not None, we can learn from it
                 agents[current_player].borrow_mut().learn(prev_state, action, rewards[current_player], &state);
+                rewards[current_player] = 0.0; // Reset the reward for the current player
             }
             // Get the next action from the current player
             let action = agents[current_player].borrow_mut().act(&state);

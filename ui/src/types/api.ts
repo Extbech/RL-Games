@@ -6,7 +6,7 @@ export type TicTacPlayer = "X" | "O";
 
 export type TicTacToeBoard = {
     cells: Array<Array<CellState>>;
-    currentPlayer: TicTacPlayer;
+    current_player: TicTacPlayer;
 }
 
 export type TicTacAction = [number, number];
