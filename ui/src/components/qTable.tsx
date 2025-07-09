@@ -10,8 +10,8 @@ import Typography from "@mui/material/Typography";
 type Direction = "Up" | "Down" | "Left" | "Right";
 type QTable = Array<Array<Direction>>;
 type Inner = {
-  position: Array<number>
-}
+  position: Array<number>;
+};
 
 export const QTable = () => {
   const [data, setData] = useState<QTable | null>(null);
@@ -22,12 +22,12 @@ export const QTable = () => {
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-      let result: Array<[Inner, Direction]> = await response.json();
+      const result: Array<[Inner, Direction]> = await response.json();
       console.log(result);
-      let qTable: Array<Array<Direction>> = [];
+      const qTable: Array<Array<Direction>> = [];
       let temp: Array<Direction> = [];
       let prevRow = 0;
-      
+
       for (let i = 0; i < result.length; i++) {
         if (i === result.length - 1) {
           temp.push(result[i][1]);

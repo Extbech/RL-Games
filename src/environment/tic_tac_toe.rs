@@ -89,11 +89,11 @@ impl SpaceElem for Board {
             let current_player = match x_cells as isize - o_cells as isize {
                 0 => TicTacPlayer::X, // X starts first
                 1 => TicTacPlayer::O, // O's turn
-                _ => return None, // Invalid state
+                _ => return None,     // Invalid state
             };
             let mut temp = Self {
                 cells: [[CellState::Empty; 3]; 3],
-                current_player
+                current_player,
             };
             for n in discrete.iter().enumerate() {
                 let row = n.0 / 3;
@@ -176,7 +176,7 @@ impl TicTacEnvironment {
                 cells: [[CellState::Empty; 3]; 3],
                 current_player: TicTacPlayer::X, // X starts first
             },
-            reward: [0.0,0.0],
+            reward: [0.0, 0.0],
             done: false,
             player: TicTacPlayer::X,
         }
@@ -260,7 +260,7 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::O;
                 } else {
-                    self.reward = [-1.0,1.0]; // Invalid move
+                    self.reward = [-1.0, 1.0]; // Invalid move
                     self.done = true;
                 }
             }
@@ -270,7 +270,7 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::X;
                 } else {
-                    self.reward = [1.0,-1.0]; // Invalid move
+                    self.reward = [1.0, -1.0]; // Invalid move
                     self.done = true;
                 }
             }

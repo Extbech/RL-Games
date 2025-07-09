@@ -129,19 +129,21 @@ fn test_all_elems_as_vec() {
     assert_eq!(v.len(), 9);
 }
 
-fn all_actions<'a, A: Action + 'a>(action_space: &'a[usize]) -> impl Iterator<Item = A> + 'a {
+fn all_actions<'a, A: Action + 'a>(action_space: &'a [usize]) -> impl Iterator<Item = A> + 'a {
     let mut indices = vec![0; action_space.len()];
     let max_indices: Vec<usize> = action_space.iter().map(|&s| s - 1).collect();
-    std::iter::once(A::try_build(&action_space, &indices, &[]).unwrap()).chain(std::iter::from_fn(move || {
-        for i in (0..indices.len()).rev() {
-            if indices[i] < max_indices[i] {
-                indices[i] += 1;
-                return Some(A::try_build(&action_space, &indices, &[]).unwrap());
+    std::iter::once(A::try_build(&action_space, &indices, &[]).unwrap()).chain(std::iter::from_fn(
+        move || {
+            for i in (0..indices.len()).rev() {
+                if indices[i] < max_indices[i] {
+                    indices[i] += 1;
+                    return Some(A::try_build(&action_space, &indices, &[]).unwrap());
+                }
+                indices[i] = 0;
             }
-            indices[i] = 0;
-        }
-        None
-    }))
+            None
+        },
+    ))
 }
 
 impl<E: Environment> Agent<E> for QAgent {
