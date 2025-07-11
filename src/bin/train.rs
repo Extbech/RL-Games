@@ -23,11 +23,11 @@ fn main() {
     match a.as_str() {
         "grid" => {
             pb.set_message("Training Grid Agent");
-            train_grid_agent(10_000_000, pb);
+            train_grid_agent(EPISODES, pb);
         }
         "tic-tac-toe" => {
             pb.set_message("Training Tic Tac Toe Agent");
-            train_tic_tac_toe_agent(10_000_000, pb);
+            train_tic_tac_toe_agent(EPISODES, pb);
         }
         _ => {
             println!("training all agents");

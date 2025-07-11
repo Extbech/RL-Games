@@ -1,3 +1,4 @@
+/// Tic Tac Toe
 export type EnvironmentType = "TicTacToe" | "Grid";
 
 export type CellState = "Empty" | "X" | "O";
@@ -11,3 +12,7 @@ export type TicTacToeBoard = {
 }
 
 export type TicTacAction = [number, number];
+
+/// Grid
+export type Direction = "Up" | "Down" | "Left" | "Right";
+export type GridBoard = Array<Array<Direction>>;
