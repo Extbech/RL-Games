@@ -21,6 +21,7 @@ export const TicTacToe = () => {
       const newData: TicTacToeBoard = {
         cells: newCells,
         current_player: data.current_player === "X" ? "O" : "X",
+        done: false,
       };
       setData(newData);
       setPlayerTurn(false);
@@ -41,6 +42,7 @@ export const TicTacToe = () => {
         const newData: TicTacToeBoard = {
           cells: newCells,
           current_player: data.current_player === "X" ? "O" : "X",
+          done: false,
         };
         setData(newData);
         setPlayerTurn(true);
