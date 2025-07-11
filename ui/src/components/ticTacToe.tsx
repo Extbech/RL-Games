@@ -1,17 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import type { CellState, TicTacToeBoard } from "../types/api";
 import { initTicTacToeBoard, predictTicTacToe } from "../helpers/ticTacToe";
 
 export const TicTacToe = () => {
   const [data, setData] = useState<TicTacToeBoard>(initTicTacToeBoard());
+  const [playerTurn, setPlayerTurn] = useState<boolean>(true);
 
   const tileClickHandler = async (
     rowIndex: number,
     cellIndex: number,
     cell: CellState
   ) => {
-    if (cell === "Empty") {
+    if (cell === "Empty" && playerTurn) {
       const newCells = data.cells.map((r, rIndex) =>
         r.map((c, cIndex) =>
           rIndex === rowIndex && cIndex === cellIndex ? data.current_player : c
@@ -22,11 +23,31 @@ export const TicTacToe = () => {
         current_player: data.current_player === "X" ? "O" : "X",
       };
       setData(newData);
-      console.log("New Board State:", newData);
-      const agent_prediction = await predictTicTacToe(newData);
-      console.log("Agent prediction: ", agent_prediction);
+      setPlayerTurn(false);
     }
   };
+
+  useEffect(() => {
+    if (!playerTurn) {
+      predictTicTacToe(data).then((predictedCords) => {
+        console.log("Predicted coordinates:", predictedCords);
+        const newCells = data.cells.map((r, rIndex) =>
+          r.map((c, cIndex) =>
+            rIndex === predictedCords[0] && cIndex === predictedCords[1]
+              ? data.current_player
+              : c
+          )
+        );
+        const newData: TicTacToeBoard = {
+          cells: newCells,
+          current_player: data.current_player === "X" ? "O" : "X",
+        };
+        setData(newData);
+        setPlayerTurn(true);
+      });
+    }
+  }, [playerTurn, data]);
+
   if (!data) {
     return (
       <div
