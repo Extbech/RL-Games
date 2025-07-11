@@ -15,12 +15,12 @@ export const TicTacToe = () => {
     if (cell === "Empty" && playerTurn) {
       const newCells = data.cells.map((r, rIndex) =>
         r.map((c, cIndex) =>
-          rIndex === rowIndex && cIndex === cellIndex ? data.current_player : c
+          rIndex === rowIndex && cIndex === cellIndex ? data.player : c
         )
       );
       const newData: TicTacToeBoard = {
         cells: newCells,
-        current_player: data.current_player === "X" ? "O" : "X",
+        player: data.player === "X" ? "O" : "X",
         done: false,
       };
       setData(newData);
@@ -35,13 +35,13 @@ export const TicTacToe = () => {
         const newCells = data.cells.map((r, rIndex) =>
           r.map((c, cIndex) =>
             rIndex === predictedCords[0] && cIndex === predictedCords[1]
-              ? data.current_player
+              ? data.player
               : c
           )
         );
         const newData: TicTacToeBoard = {
           cells: newCells,
-          current_player: data.current_player === "X" ? "O" : "X",
+          player: data.player === "X" ? "O" : "X",
           done: false,
         };
         setData(newData);

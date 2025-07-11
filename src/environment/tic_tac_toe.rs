@@ -115,7 +115,7 @@ impl State for Board {
         match (self.player, self.done) {
             (TicTacPlayer::X, false) => Some(0),
             (TicTacPlayer::O, false) => Some(1),
-            (_              , true ) => None
+            (_, true) => None,
         }
     }
 }
@@ -181,7 +181,7 @@ impl TicTacEnvironment {
                 player: TicTacPlayer::X, // X starts first
                 done: false,
             },
-            reward: [0.0, 0.0]
+            reward: [0.0, 0.0],
         }
     }
 

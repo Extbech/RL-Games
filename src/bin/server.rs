@@ -71,10 +71,10 @@ async fn predict(
     let Some(state) = query.get("state") else {
         return HttpResponse::BadRequest().body("Missing 'state' query parameter");
     };
+    dbg!(state);
     match env {
         EnvironmentType::TicTacToe => {
-            let obj = serde_json::from_str::<tic_tac_toe::Board>(&state)
-                .expect("Failed to deserialize TicTacEnvironment");
+            let obj = serde_json::from_str::<tic_tac_toe::Board>(&state).unwrap();
             let res = <QAgent as Agent<TicTacEnvironment>>::predict(&agent, &obj);
             HttpResponse::Ok().json(res)
         }

@@ -5,7 +5,8 @@ export const initTicTacToeBoard = (): TicTacToeBoard => {
         cells: Array(3)
         .fill(null)
         .map(() => Array(3).fill("Empty")),
-        current_player: "X",
+        player: "X",
+        done: false,
     };
 }
 
