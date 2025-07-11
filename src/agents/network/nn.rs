@@ -1,6 +1,8 @@
 use rand::Rng;
+use serde::{Serialize, Deserialize};
 
 /// Enum representing different activation functions used in the neural network.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ActivationFunction {
     /// Rectified Linear Unit (ReLU) activation function.
     /// ReLU is defined as f(x) = max(0, x).
@@ -47,6 +49,7 @@ impl ActivationFunction {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum LossFunction {
     /// Mean Squared Error (MSE) loss function.
     MeanSquaredError,
@@ -55,7 +58,7 @@ pub enum LossFunction {
 
 impl LossFunction {
     /// Calculates the loss between the predicted output and the target output.
-    pub fn calculate(&self, predicted: &[f64], target: &[f64]) -> f64 {
+    pub fn loss(&self, predicted: &[f64], target: &[f64]) -> f64 {
         match self {
             LossFunction::MeanSquaredError => {
                 predicted
@@ -77,7 +80,7 @@ impl LossFunction {
     }
 
     /// Calculates the gradient of the loss function with respect to the predicted output.
-    pub fn gradient(&self, predicted: &[f64], target: &[f64]) -> Vec<f64> {
+    fn gradient(&self, predicted: &[f64], target: &[f64]) -> Vec<f64> {
         match self {
             LossFunction::MeanSquaredError => predicted
                 .iter()
@@ -93,6 +96,7 @@ impl LossFunction {
     }
 }
 /// A simple deep neural network struct.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NeuralNetwork {
     layers: Vec<Layer>,
     learning_rate: f64,
@@ -107,16 +111,12 @@ impl NeuralNetwork {
     /// For example, layer_sizes = [4, 5, 3] creates a network with 4 inputs,
     /// one hidden layer with 5 neurons and an output layer with 3 neurons.
     pub fn new(
-        layer_sizes: Vec<usize>,
         learning_rate: f64,
         activation_function: ActivationFunction,
         final_activation: ActivationFunction,
         loss_function: LossFunction,
     ) -> Self {
-        let mut layers = Vec::new();
-        for i in 0..layer_sizes.len() - 1 {
-            layers.push(Layer::new(layer_sizes[i], layer_sizes[i + 1]));
-        }
+        let layers = Vec::new();
         NeuralNetwork {
             layers,
             learning_rate,
@@ -126,12 +126,20 @@ impl NeuralNetwork {
         }
     }
 
+    pub fn add_layers(&mut self, layer_sizes: &[usize]) {
+        for i in 0..layer_sizes.len() - 1 {
+            self.layers.push(Layer::new(layer_sizes[i], layer_sizes[i + 1]));
+        }
+    }
+
     /// Performs a forward pass through the network.
     /// Each layer computes its output which is fed as input to the next layer.
     /// Returns the activated outputs of the final layer.
-    pub fn forward(&self, mut input: Vec<f64>) -> Vec<Vec<f64>> {
+    fn forward_inner(&self, mut input: Vec<f64>, with_cache: bool) -> (Vec<Vec<f64>>, Vec<f64>) {
         let mut cache: Vec<Vec<f64>> = Vec::new();
-        cache.push(input.clone());
+        if with_cache {
+            cache.push(input.clone());
+        }
         for (i, layer) in self.layers.iter().enumerate() {
             input = if i < self.layers.len() - 1 {
                 // Hidden layers use the standard activation function.
@@ -140,20 +148,26 @@ impl NeuralNetwork {
                 // Final layer uses the final activation function.
                 layer.forward(&input, &self.final_activation)
             };
-            cache.push(input.clone());
+            if with_cache {
+                cache.push(input.clone());
+            }
         }
-        cache
+        (cache, input)
+    }
+
+    fn forward(&self, input: Vec<f64>) -> Vec<Vec<f64>> {
+        // Perform the forward pass and return the cache of activations.
+        self.forward_inner(input, true).0
+    }
+
+    pub fn predict(&self, input: Vec<f64>) -> Vec<f64> {
+        self.forward_inner(input, false).1
     }
 
     ///
-    pub fn backpropogation(&mut self, cache: Vec<Vec<f64>>, target: &[f64]) {
+    fn backpropogation(&mut self, cache: Vec<Vec<f64>>, target: &[f64]) {
         // 1. Compute initial delta at the output layer.
         // Get the output of the final layer.
-        println!(
-            "Target: {:?}, predicted: {:?}",
-            target,
-            cache[cache.len() - 1]
-        );
         let output = &cache[cache.len() - 1];
         let loss_grad = self.loss_function.gradient(output, target);
         // Delta = loss gradient * derivative(final activation)
@@ -180,9 +194,6 @@ impl NeuralNetwork {
                     weight_gradients[j][k] = delta[j] * activations[k];
                 }
             }
-            println!("Delta: {:?}", delta);
-            println!("activations: {:?}", activations);
-            println!("Weight gradients: {:?}", weight_gradients);
             // Update weights and biases.
             for j in 0..self.layers[layer_index].weights.len() {
                 for k in 0..self.layers[layer_index].weights[j].len() {
@@ -219,7 +230,7 @@ impl NeuralNetwork {
 }
 
 /// Represents a single layer in the neural network.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Layer {
     pub weights: Vec<Vec<f64>>,
     pub biases: Vec<f64>,
@@ -258,13 +269,13 @@ mod tests {
 
     #[test]
     fn test_neural_network_creation() {
-        let nn = NeuralNetwork::new(
-            vec![2, 3, 3, 2],
+        let mut nn = NeuralNetwork::new(
             0.01,
             ActivationFunction::ReLU,
             ActivationFunction::Sigmoid,
             LossFunction::MeanSquaredError,
         );
+        nn.add_layers(&[2, 3, 3, 2]);
         // Check if the number of layers is correct.
         assert_eq!(nn.layers.len(), 3);
     }
@@ -278,13 +289,13 @@ mod tests {
 
     #[test]
     fn test_forward_pass() {
-        let nn = NeuralNetwork::new(
-            vec![2, 3, 2],
+        let mut nn = NeuralNetwork::new(
             0.01,
             ActivationFunction::ReLU,
             ActivationFunction::Sigmoid,
             LossFunction::MeanSquaredError,
         );
+        nn.add_layers(&[2, 3, 2]);
         let input = vec![1.0, 2.0];
         let output = nn.forward(input);
         // Check that output length equals the size of the final layer.
@@ -295,12 +306,12 @@ mod tests {
     #[test]
     fn test_train_step() {
         let mut nn = NeuralNetwork::new(
-            vec![2, 3, 2],
             0.01,
             ActivationFunction::ReLU,
             ActivationFunction::Sigmoid,
             LossFunction::MeanSquaredError,
         );
+        nn.add_layers(&[2, 3, 2]);
         let input = vec![vec![0.5, -0.5], vec![0.7, -0.5], vec![0.5, -0.7]];
         let target = vec![vec![1.0, 0.0], vec![1.0, 0.0], vec![1.0, 0.0]];
 

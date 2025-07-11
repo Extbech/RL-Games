@@ -20,6 +20,22 @@ pub trait Space: Default + Clone {
     /// A space that returns `None` for `d`
     /// should also return `None` for greater values.
     fn continuous_dim(&self, d: usize) -> Option<Range<f32>>;
+
+    fn as_vecs(&self) -> (Vec<usize>, Vec<Range<f32>>) {
+        let mut d = 0;
+        let mut disc = vec![];
+        while let Some(dim) = self.discrete_dim(d) {
+            disc.push(dim);
+            d += 1;
+        }
+        let mut d = 0;
+        let mut cont = vec![];
+        while let Some(range) = self.continuous_dim(d) {
+            cont.push(range);
+            d += 1;
+        }
+        (disc, cont)
+    }
 }
 
 pub trait SpaceElem: Sized + Serialize {
@@ -156,7 +172,17 @@ impl Space for &[usize] {
         self.get(d).cloned()
     }
 
-    fn continuous_dim(&self, _d: usize) -> Option<std::ops::Range<f32>> {
+    fn continuous_dim(&self, _d: usize) -> Option<Range<f32>> {
         None
+    }
+}
+
+impl Space for (&[usize], &[Range<f32>]) {
+    fn discrete_dim(&self, d: usize) -> Option<usize> {
+        self.0.get(d).cloned()
+    }
+
+    fn continuous_dim(&self, d: usize) -> Option<Range<f32>> {
+        self.1.get(d).cloned()
     }
 }
