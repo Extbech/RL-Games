@@ -8,10 +8,11 @@ export const Root = () => {
       <Navbar />
       <Box
         sx={{
+          width: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          ml: "200px",
+          justifyContent: "center",
           mt: "100px",
         }}
       >
