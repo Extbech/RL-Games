@@ -59,7 +59,7 @@ impl CellState {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Board {
     pub cells: [[CellState; 3]; 3],
-    pub current_player: TicTacPlayer,
+    pub player: TicTacPlayer,
     pub done: bool,
 }
 
@@ -88,14 +88,14 @@ impl SpaceElem for Board {
         if discrete.len() == 10 && continuous.is_empty() {
             let x_cells = discrete.iter().filter(|&&x| x == 1).count();
             let o_cells = discrete.iter().filter(|&&x| x == 2).count();
-            let current_player = match x_cells as isize - o_cells as isize {
+            let player = match x_cells as isize - o_cells as isize {
                 0 => TicTacPlayer::X, // X starts first
                 1 => TicTacPlayer::O, // O's turn
                 _ => return None,     // Invalid state
             };
             let mut temp = Self {
                 cells: [[CellState::Empty; 3]; 3],
-                current_player,
+                player,
                 done: discrete[9] == 1,
             };
             for n in discrete.iter().enumerate() {
@@ -112,7 +112,7 @@ impl SpaceElem for Board {
 
 impl State for Board {
     fn current_player(&self) -> Option<usize> {
-        match (self.current_player, self.done) {
+        match (self.player, self.done) {
             (TicTacPlayer::X, false) => Some(0),
             (TicTacPlayer::O, false) => Some(1),
             (_              , true ) => None
@@ -171,7 +171,6 @@ pub enum TicTacPlayer {
 pub struct TicTacEnvironment {
     pub board: Board,
     pub reward: [f32; 2],
-    pub player: TicTacPlayer,
 }
 
 impl TicTacEnvironment {
@@ -179,11 +178,10 @@ impl TicTacEnvironment {
         TicTacEnvironment {
             board: Board {
                 cells: [[CellState::Empty; 3]; 3],
-                current_player: TicTacPlayer::X, // X starts first
+                player: TicTacPlayer::X, // X starts first
                 done: false,
             },
-            reward: [0.0, 0.0],
-            player: TicTacPlayer::X,
+            reward: [0.0, 0.0]
         }
     }
 
@@ -270,12 +268,12 @@ impl Environment for TicTacEnvironment {
     /// Steps through the environment based on the action taken by the agent.
     /// It updates the agent's position, calculates the reward, and checks if the game is finished.
     fn step(&mut self, action: &Self::Action) -> Step<Self> {
-        match self.player {
+        match self.board.player {
             TicTacPlayer::X => {
                 if self.board.cells[action.0][action.1] == CellState::Empty {
                     self.board.cells[action.0][action.1] = CellState::X;
                     self.calc_reward();
-                    self.player = TicTacPlayer::O;
+                    self.board.player = TicTacPlayer::O;
                 } else {
                     if self.is_draw() {
                         self.reward = [0.0, 0.0]; // Draw
@@ -290,7 +288,7 @@ impl Environment for TicTacEnvironment {
                 if self.board.cells[action.0][action.1] == CellState::Empty {
                     self.board.cells[action.0][action.1] = CellState::O;
                     self.calc_reward();
-                    self.player = TicTacPlayer::X;
+                    self.board.player = TicTacPlayer::X;
                 } else {
                     if self.is_draw() {
                         self.reward = [0.0, 0.0]; // Draw
