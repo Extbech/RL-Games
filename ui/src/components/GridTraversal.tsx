@@ -23,7 +23,7 @@ export const GridTraversal = () => {
         throw new Error("Network response was not ok");
       }
       const result: Array<[Inner, Direction]> = await response.json();
-      console.log(result);
+
       const qTable: Array<Array<Direction>> = [];
       let temp: Array<Direction> = [];
       let prevRow = 0;
@@ -35,14 +35,12 @@ export const GridTraversal = () => {
           break;
         }
         if (result[i][0].position[0] != prevRow) {
-          console.log("This was hit at", prevRow, result[i][0].position[0]);
           qTable.push(temp);
           temp = [];
           prevRow = result[i][0].position[0];
         }
         temp.push(result[i][1]);
       }
-      console.log("Qtable formatting lul", qTable);
       setData(qTable);
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error);
