@@ -85,7 +85,7 @@ impl SpaceElem for Board {
     }
 
     fn try_build(_: &impl Space, discrete: &[usize], continuous: &[f32]) -> Option<Self> {
-        if discrete.len() == 9 && continuous.is_empty() {
+        if discrete.len() == 10 && continuous.is_empty() {
             let x_cells = discrete.iter().filter(|&&x| x == 1).count();
             let o_cells = discrete.iter().filter(|&&x| x == 2).count();
             let current_player = match x_cells as isize - o_cells as isize {
@@ -96,7 +96,7 @@ impl SpaceElem for Board {
             let mut temp = Self {
                 cells: [[CellState::Empty; 3]; 3],
                 current_player,
-                done: false,
+                done: discrete[9] == 1,
             };
             for n in discrete.iter().enumerate() {
                 let row = n.0 / 3;
@@ -127,6 +127,8 @@ impl Space for Shape {
     fn discrete_dim(&self, d: usize) -> Option<usize> {
         if d < 9 {
             Some(3)
+        } else if d == 9 {
+            Some(2) // For the done state
         } else {
             None
         }
@@ -194,9 +196,11 @@ impl TicTacEnvironment {
                 match self.board.cells[i][0] {
                     CellState::X => {
                         self.reward = [1.0, -1.0]; // X wins
+                        self.board.done = true;
                     }
                     CellState::O => {
                         self.reward = [-1.0, 1.0]; // O wins
+                        self.board.done = true;
                     }
                     CellState::Empty => continue, // No winner yet
                 }
@@ -207,9 +211,11 @@ impl TicTacEnvironment {
                 match self.board.cells[0][i] {
                     CellState::X => {
                         self.reward = [1.0, -1.0]; // X wins
+                        self.board.done = true;
                     }
                     CellState::O => {
                         self.reward = [-1.0, 1.0]; // O wins
+                        self.board.done = true;
                     }
                     CellState::Empty => continue, // No winner yet
                 }
@@ -223,13 +229,21 @@ impl TicTacEnvironment {
             match self.board.cells[1][1] {
                 CellState::X => {
                     self.reward = [1.0, -1.0]; // X wins
+                    self.board.done = true;
                 }
                 CellState::O => {
                     self.reward = [-1.0, 1.0]; // O wins
+                    self.board.done = true;
                 }
                 CellState::Empty => return, // No winner yet
             }
         }
+    }
+    fn is_draw(&self) -> bool {
+        self.board
+            .cells
+            .iter()
+            .all(|row| row.iter().all(|&cell| cell != CellState::Empty))
     }
 }
 
@@ -263,8 +277,13 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::O;
                 } else {
-                    self.reward = [-1.0, 1.0]; // Invalid move
-                    self.board.done = true;
+                    if self.is_draw() {
+                        self.reward = [0.0, 0.0]; // Draw
+                        self.board.done = true;
+                    } else {
+                        self.reward = [-100.0, 1.0]; // Invalid move
+                        self.board.done = true;
+                    }
                 }
             }
             TicTacPlayer::O => {
@@ -273,8 +292,13 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::X;
                 } else {
-                    self.reward = [1.0, -1.0]; // Invalid move
-                    self.board.done = true;
+                    if self.is_draw() {
+                        self.reward = [0.0, 0.0]; // Draw
+                        self.board.done = true;
+                    } else {
+                        self.reward = [1.0, -100.0]; // Invalid move
+                        self.board.done = true;
+                    }
                 }
             }
         }

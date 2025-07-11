@@ -17,35 +17,43 @@ fn main() {
             let mut env = GridEnvironment::new(GRID_SIZE.0, GRID_SIZE.1);
             agent.borrow_mut().try_init(&env);
             let agents = [agent.clone() as Rc<RefCell<dyn Agent<GridEnvironment>>>];
-            train::train(&mut env, &agents as &[Rc<RefCell<dyn Agent<GridEnvironment>>>], 1_000_000);
+            train::train(
+                &mut env,
+                &agents as &[Rc<RefCell<dyn Agent<GridEnvironment>>>],
+                1_000_000,
+            );
         }
         "tic-tac-toe" => {
             let mut env = TicTacEnvironment::new();
-            let random_agent = Rc::new(RefCell::new(random_agent::RandomAgent::<TicTacEnvironment>::new()));
+            // let random_agent = Rc::new(RefCell::new(random_agent::RandomAgent::<TicTacEnvironment>::new()));
             agent.borrow_mut().try_init(&env);
-            let agents = [agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
-                          random_agent.clone()];
+            let agents = [
+                agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
+                agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
+            ];
             train::train(
                 &mut env,
                 &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
                 10_000_000,
             );
-            let agents = [random_agent.clone(),
-                agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>];
-            train::train(
-                &mut env,
-                &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
-                10_000_000,
-            );
+            // let agents = [
+            //     random_agent.clone(),
+            //     agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
+            // ];
+            // train::train(
+            //     &mut env,
+            //     &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
+            //     10_000_000,
+            // );
         }
         _ => {
             eprintln!("Unknown environment type: {}", a);
             return;
         }
-
     }
 
-    agent.borrow_mut()
+    agent
+        .borrow_mut()
         .save_to_file("data/q_table.json")
         .expect("Failed to save Q-table to file");
 
