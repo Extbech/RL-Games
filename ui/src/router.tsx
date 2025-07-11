@@ -4,6 +4,7 @@ import { Root } from "./components/Root";
 import { GridTraversal } from "./components/GridTraversal";
 import { NotFound } from "./components/NotFound";
 import { TicTacToe } from "./components/ticTacToe";
+import { Home } from "./components/home";
 
 export const router = createBrowserRouter([
   {
@@ -11,6 +12,10 @@ export const router = createBrowserRouter([
     element: <Root />,
     errorElement: <NotFound />,
     children: [
+      {
+        path: "/",
+        element: <Home />,
+      },
       {
         path: "/GridTraversal",
         element: <GridTraversal />,

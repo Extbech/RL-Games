@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import type { CellState, TicTacToeBoard } from "../types/api";
 import { initTicTacToeBoard, predictTicTacToe } from "../helpers/ticTacToe";
+import { Button } from "@mui/material";
 
 export const TicTacToe = () => {
   const [data, setData] = useState<TicTacToeBoard>(initTicTacToeBoard());
@@ -109,19 +110,20 @@ export const TicTacToe = () => {
           ))
         )}
       </div>
-      <button
+      <Button
         style={{
           marginTop: "16px",
           padding: "8px 16px",
           fontSize: "16px",
           cursor: "pointer",
         }}
+        variant="contained"
         onClick={() => {
           setData(initTicTacToeBoard());
         }}
       >
         Reset Game
-      </button>
+      </Button>
     </div>
   );
 };
