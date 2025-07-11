@@ -1,11 +1,32 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Typography from "@mui/material/Typography";
-import type { TicTacToeBoard } from "../types/api";
+import type { CellState, TicTacToeBoard } from "../types/api";
 import { initTicTacToeBoard, predictTicTacToe } from "../helpers/ticTacToe";
 
 export const TicTacToe = () => {
   const [data, setData] = useState<TicTacToeBoard>(initTicTacToeBoard());
 
+  const tileClickHandler = async (
+    rowIndex: number,
+    cellIndex: number,
+    cell: CellState
+  ) => {
+    if (cell === "Empty") {
+      const newCells = data.cells.map((r, rIndex) =>
+        r.map((c, cIndex) =>
+          rIndex === rowIndex && cIndex === cellIndex ? data.current_player : c
+        )
+      );
+      const newData: TicTacToeBoard = {
+        cells: newCells,
+        current_player: data.current_player === "X" ? "O" : "X",
+      };
+      setData(newData);
+      console.log("New Board State:", newData);
+      const agent_prediction = await predictTicTacToe(newData);
+      console.log("Agent prediction: ", agent_prediction);
+    }
+  };
   if (!data) {
     return (
       <div
@@ -56,36 +77,9 @@ export const TicTacToe = () => {
                 borderRadius: "4px",
                 cursor: "pointer",
               }}
-              onClick={async () => {
-                if (cell === "Empty") {
-                  const newCells = data.cells.map((r, rIndex) =>
-                    r.map((c, cIndex) =>
-                      rIndex === rowIndex && cIndex === cellIndex
-                        ? data.current_player
-                        : c
-                    )
-                  );
-                  setData({
-                    ...data,
-                    cells: newCells,
-                    current_player: data.current_player === "X" ? "O" : "X",
-                  });
-                  const agent_prediction = await predictTicTacToe(data);
-                  const newCellsAfterPrediction = data.cells.map((r, rIndex) =>
-                    r.map((c, cIndex) =>
-                      rIndex === agent_prediction[0] &&
-                      cIndex === agent_prediction[1]
-                        ? data.current_player
-                        : c
-                    )
-                  );
-                  setData({
-                    ...data,
-                    cells: newCellsAfterPrediction,
-                    current_player: data.current_player === "X" ? "O" : "X",
-                  });
-                }
-              }}
+              onClick={async () =>
+                await tileClickHandler(rowIndex, cellIndex, cell)
+              }
             >
               {cell}
             </div>
