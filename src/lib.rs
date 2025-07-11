@@ -6,6 +6,9 @@ pub mod agents;
 pub mod environment;
 pub mod train;
 
+pub const GRID_AGENT_SAVE_FILE_PATH: &str = "data/q_tables/grid.json";
+pub const TIC_TAC_TOE_AGENT_SAVE_FILE_PATH: &str = "data/q_tables/tic_tac_toe.json";
+
 /// A Generalization of spaces, both state and action spaces
 pub trait Space: Default + Clone {
     /// The size of each discrete dimension.
@@ -84,19 +87,19 @@ pub struct Step<'a, E: Environment + ?Sized> {
     next_state: &'a E::State,
 }
 
-trait StateSpace: Space {
+pub trait StateSpace: Space {
     fn player_count(&self) -> usize;
 }
 
-trait State: SpaceElem + Clone {
+pub trait State: SpaceElem + Clone {
     fn current_player(&self) -> Option<usize>;
 }
 
 pub trait Environment {
     type StateSpace: StateSpace;
     type ActionSpace: Space;
-    type State: State + std::fmt::Debug;
-    type Action: Action + std::fmt::Debug;
+    type State: State;
+    type Action: Action;
 
     fn state_space(&self) -> &Self::StateSpace;
     fn action_space(&self) -> &Self::ActionSpace;
