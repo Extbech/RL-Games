@@ -28,8 +28,8 @@ pub fn train<E: Environment>(env: &mut E, agents: &[Rc<RefCell<dyn Agent<E>>>], 
         let mut rewards = vec![0.0; agents.len()];
         let mut prev = vec![];
         prev.resize_with(agents.len(), || None);
-        let current_player = state.current_player();
-        while let Some(current_player) = current_player {
+        let mut o_current_player = state.current_player();
+        while let Some(current_player) = o_current_player {
             // If the current player has done an action before, we can learn from it
             if let Some((prev_state, action)) = &prev[current_player] {
                 // If the previous state is not None, we can learn from it
@@ -57,6 +57,7 @@ pub fn train<E: Environment>(env: &mut E, agents: &[Rc<RefCell<dyn Agent<E>>>], 
 
             // Set the next state as current for the following iteration
             state = next_state.clone();
+            o_current_player = state.current_player();
         }
         for player in 0..agents.len() {
             if let Some((prev_state, action)) = &prev[player] {
