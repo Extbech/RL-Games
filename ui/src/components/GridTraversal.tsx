@@ -13,7 +13,7 @@ type Inner = {
   position: Array<number>;
 };
 
-export const QTable = () => {
+export const GridTraversal = () => {
   const [data, setData] = useState<QTable | null>(null);
 
   const fetchData = async () => {
