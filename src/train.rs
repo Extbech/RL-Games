@@ -18,12 +18,13 @@ pub fn train<E: Environment>(
     );
 
     for episode in 1..=episodes {
-        let mut state = env.reset().clone();
+        let state = env.reset().clone();
+        let mut o_state = Some(state);
         let mut rewards = vec![0.0; agents.len()];
         let mut prev = vec![];
         prev.resize_with(agents.len(), || None);
-        let mut o_current_player = state.current_player();
-        while let Some(current_player) = o_current_player {
+        while let Some(state) = o_state {
+            let current_player = state.current_player();
             // If the current player has done an action before, we can learn from it
             if let Some((prev_state, action)) = &prev[current_player] {
                 // If the previous state is not None, we can learn from it
@@ -31,7 +32,7 @@ pub fn train<E: Environment>(
                     prev_state,
                     action,
                     rewards[current_player],
-                    &state,
+                    Some(&state),
                 );
                 rewards[current_player] = 0.0; // Reset the reward for the current player
             }
@@ -44,18 +45,14 @@ pub fn train<E: Environment>(
             }
             // Remember the action and the state
             prev[current_player] = Some((state.clone(), action));
-            // If we are finished everyone must learn
 
             // Set the next state as current for the following iteration
-            state = next_state.clone();
-            o_current_player = state.current_player();
+            o_state = next_state.cloned();
         }
         for player in 0..agents.len() {
             if let Some((prev_state, action)) = &prev[player] {
                 // If the previous state is not None, we can learn from it
-                agents[player]
-                    .borrow_mut()
-                    .learn(prev_state, action, rewards[player], &state);
+                agents[player].borrow_mut().learn(prev_state, action, rewards[player], None);
             }
         }
         pb.set_position(episode);

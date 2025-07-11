@@ -111,11 +111,10 @@ impl SpaceElem for Board {
 }
 
 impl State for Board {
-    fn current_player(&self) -> Option<usize> {
-        match (self.player, self.done) {
-            (TicTacPlayer::X, false) => Some(0),
-            (TicTacPlayer::O, false) => Some(1),
-            (_, true) => None,
+    fn current_player(&self) -> usize {
+        match self.player {
+            TicTacPlayer::X => 0,
+            TicTacPlayer::O => 1,
         }
     }
 }
@@ -300,9 +299,17 @@ impl Environment for TicTacEnvironment {
                 }
             }
         }
-        Step {
-            reward: &self.reward,
-            next_state: &self.board,
+        if self.board.done {
+            Step {
+                reward: &self.reward,
+                next_state: None, // No next state if the game is done
+            }
+        } else {
+            // If the game is not done, return the current state
+            Step {
+                reward: &self.reward,
+                next_state: Some(&self.board),
+            }
         }
     }
 }

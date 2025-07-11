@@ -93,12 +93,9 @@ impl SpaceElem for Board {
 }
 
 impl State for Board {
-    fn current_player(&self) -> Option<usize> {
-        if self.done {
-            None
-        } else {
-            Some(0) // In this simple environment, we assume a single player
-        }
+    fn current_player(&self) -> usize {
+        // In this simple environment, we assume a single player
+        0
     }
 }
 
@@ -257,9 +254,17 @@ impl Environment for GridEnvironment {
                 }
             }
         }
-        Step {
-            reward: slice::from_ref(&self.reward),
-            next_state: &self.board,
+        if self.board.done {
+            Step {
+                reward: slice::from_ref(&self.reward),
+                next_state: None,
+            }
+        } else {
+            // If the game is not done, we return the next state
+            Step {
+                reward: slice::from_ref(&self.reward),
+                next_state: Some(&self.board),
+            }
         }
     }
 }
