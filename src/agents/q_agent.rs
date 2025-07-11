@@ -236,10 +236,6 @@ impl<E: Environment> Agent<E> for QAgent {
         let mut best_value = f32::MIN;
         for a in all_actions::<E::Action>(&self.action_space) {
             let q_value: f32 = self.q_val(state, &a);
-            println!(
-                "Q-value for action {:?} in state {:?}: {}",
-                a, state, q_value
-            );
             if q_value > best_value {
                 best_value = q_value;
                 best_action = a;

@@ -1,26 +1,20 @@
-use std::{cell::RefCell, fmt::Write, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
-use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use indicatif::ProgressBar;
 
 use crate::{Agent, Environment, State, StateSpace, Step};
 
 /// Trains the agent by running a specified number of episodes in the environment.
 /// Each episode consists of the agent taking actions in the environment until a terminal state is reached. e.g. the agent either won or lost.
-pub fn train<E: Environment>(env: &mut E, agents: &[Rc<RefCell<dyn Agent<E>>>], episodes: u64) {
+pub fn train<E: Environment>(
+    env: &mut E,
+    agents: &[Rc<RefCell<dyn Agent<E>>>],
+    episodes: u64,
+    pb: ProgressBar,
+) {
     assert!(
         env.state_space().player_count() == agents.len(),
         "Number of agents must match the number of players in the environment."
-    );
-    let pb = ProgressBar::new(episodes);
-    pb.set_style(
-        ProgressStyle::with_template(
-            "{spinner:.green} [{elapsed_precise}] [{bar:80.cyan/blue}] {pos}/{len} ({eta})",
-        )
-        .unwrap()
-        .with_key("eta", |state: &ProgressState, w: &mut dyn Write| {
-            write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()
-        })
-        .progress_chars("#>-"),
     );
 
     for episode in 1..=episodes {
@@ -44,10 +38,7 @@ pub fn train<E: Environment>(env: &mut E, agents: &[Rc<RefCell<dyn Agent<E>>>], 
             }
             // Get the next action from the current player
             let action = agents[current_player].borrow_mut().act(&state);
-            let Step {
-                reward,
-                next_state,
-            } = env.step(&action);
+            let Step { reward, next_state } = env.step(&action);
             // Update the rewards
             for player in 0..agents.len() {
                 rewards[player] += reward[player];
@@ -66,4 +57,5 @@ pub fn train<E: Environment>(env: &mut E, agents: &[Rc<RefCell<dyn Agent<E>>>], 
         }
         pb.set_position(episode);
     }
+    pb.finish_with_message("Training completed");
 }

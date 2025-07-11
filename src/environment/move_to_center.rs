@@ -80,7 +80,8 @@ impl SpaceElem for Board {
 
     fn try_build(s: &impl Space, discrete: &[usize], continuous: &[f32]) -> Option<Self> {
         if discrete.len() == 2 && continuous.is_empty() {
-            let done = discrete[0] == s.discrete_dim(0)? / 2 && discrete[1] == s.discrete_dim(1)? / 2;
+            let done =
+                discrete[0] == s.discrete_dim(0)? / 2 && discrete[1] == s.discrete_dim(1)? / 2;
             Some(Self {
                 done,
                 position: (discrete[0], discrete[1]),
@@ -153,7 +154,10 @@ impl GridEnvironment {
     /// Creates a new Environment with an initial position, empty board, and default values for reward and game state.
     pub fn new(rows: usize, cols: usize) -> Self {
         GridEnvironment {
-            board: Board { position: (0, 0), done: false },
+            board: Board {
+                position: (0, 0),
+                done: false,
+            },
             shape: Shape { rows, cols },
             reward: 0.0,
         }

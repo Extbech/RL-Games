@@ -180,7 +180,7 @@ impl TicTacEnvironment {
                 player: TicTacPlayer::X, // X starts first
                 done: false,
             },
-            reward: [0.0, 0.0]
+            reward: [0.0, 0.0],
         }
     }
 
