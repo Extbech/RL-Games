@@ -191,9 +191,11 @@ impl TicTacEnvironment {
                 match self.board.cells[i][0] {
                     CellState::X => {
                         self.reward = [1.0, -1.0]; // X wins
+                        self.done = true;
                     }
                     CellState::O => {
                         self.reward = [-1.0, 1.0]; // O wins
+                        self.done = true;
                     }
                     CellState::Empty => continue, // No winner yet
                 }
@@ -204,9 +206,11 @@ impl TicTacEnvironment {
                 match self.board.cells[0][i] {
                     CellState::X => {
                         self.reward = [1.0, -1.0]; // X wins
+                        self.done = true;
                     }
                     CellState::O => {
                         self.reward = [-1.0, 1.0]; // O wins
+                        self.done = true;
                     }
                     CellState::Empty => continue, // No winner yet
                 }
@@ -220,13 +224,21 @@ impl TicTacEnvironment {
             match self.board.cells[1][1] {
                 CellState::X => {
                     self.reward = [1.0, -1.0]; // X wins
+                    self.done = true;
                 }
                 CellState::O => {
                     self.reward = [-1.0, 1.0]; // O wins
+                    self.done = true;
                 }
                 CellState::Empty => return, // No winner yet
             }
         }
+    }
+    fn is_draw(&self) -> bool {
+        self.board
+            .cells
+            .iter()
+            .all(|row| row.iter().all(|&cell| cell != CellState::Empty))
     }
 }
 
@@ -260,8 +272,13 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::O;
                 } else {
-                    self.reward = [-100.0, 1.0]; // Invalid move
-                    self.done = true;
+                    if self.is_draw() {
+                        self.reward = [0.0, 0.0]; // Draw
+                        self.done = true;
+                    } else {
+                        self.reward = [-100.0, 1.0]; // Invalid move
+                        self.done = true;
+                    }
                 }
             }
             TicTacPlayer::O => {
@@ -270,8 +287,13 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::X;
                 } else {
-                    self.reward = [1.0, -100.0]; // Invalid move
-                    self.done = true;
+                    if self.is_draw() {
+                        self.reward = [0.0, 0.0]; // Draw
+                        self.done = true;
+                    } else {
+                        self.reward = [1.0, -100.0]; // Invalid move
+                        self.done = true;
+                    }
                 }
             }
         }
