@@ -85,7 +85,6 @@ pub trait Action: SpaceElem + Default {
 }
 
 pub struct Step<'a, E: Environment + ?Sized> {
-    is_final: bool,
     reward: &'a [f32],
     next_state: &'a E::State,
 }
@@ -95,7 +94,7 @@ trait StateSpace: Space {
 }
 
 trait State: SpaceElem + Clone {
-    fn current_player(&self) -> usize;
+    fn current_player(&self) -> Option<usize>;
 }
 
 pub trait Environment {

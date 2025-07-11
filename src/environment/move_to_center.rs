@@ -62,6 +62,7 @@ impl Action for MoveAction {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Board {
     pub position: (usize, usize),
+    pub done: bool,
 }
 
 impl SpaceElem for Board {
@@ -77,9 +78,11 @@ impl SpaceElem for Board {
         None
     }
 
-    fn try_build(_: &impl Space, discrete: &[usize], continuous: &[f32]) -> Option<Self> {
+    fn try_build(s: &impl Space, discrete: &[usize], continuous: &[f32]) -> Option<Self> {
         if discrete.len() == 2 && continuous.is_empty() {
+            let done = discrete[0] == s.discrete_dim(0)? / 2 && discrete[1] == s.discrete_dim(1)? / 2;
             Some(Self {
+                done,
                 position: (discrete[0], discrete[1]),
             })
         } else {
@@ -89,8 +92,12 @@ impl SpaceElem for Board {
 }
 
 impl State for Board {
-    fn current_player(&self) -> usize {
-        0 // In this simple environment, we assume a single player
+    fn current_player(&self) -> Option<usize> {
+        if self.done {
+            None
+        } else {
+            Some(0) // In this simple environment, we assume a single player
+        }
     }
 }
 
@@ -143,17 +150,15 @@ pub struct GridEnvironment {
     pub board: Board,
     // pub walls: Vec<(usize, usize)>,
     pub reward: f32,
-    pub done: bool,
 }
 
 impl GridEnvironment {
     /// Creates a new Environment with an initial position, empty board, and default values for reward and game state.
     pub fn new(rows: usize, cols: usize) -> Self {
         GridEnvironment {
-            board: Board { position: (0, 0) },
+            board: Board { position: (0, 0), done: false },
             shape: Shape { rows, cols },
             reward: 0.0,
-            done: false,
         }
     }
 
@@ -166,7 +171,7 @@ impl GridEnvironment {
             && self.board.position.1 == self.shape.rows / 2
         {
             self.reward = 100.0;
-            self.done = true
+            self.board.done = true
         } else {
             self.reward = 1.
                 / f32::sqrt(
@@ -194,7 +199,7 @@ impl Environment for GridEnvironment {
     /// Resets the environment and sets a new random starting position so that our agent does not always start in the top-left corner.
     fn reset(&mut self) -> &Self::State {
         self.reward = 0.0;
-        self.done = false;
+        self.board.done = false;
         self.board.position = (self.shape.rows / 2, self.shape.cols / 2);
         while self.board.position.0 == self.shape.rows / 2
             && self.board.position.1 == self.shape.cols / 2
@@ -217,7 +222,7 @@ impl Environment for GridEnvironment {
                     self.calc_reward()
                 } else {
                     self.calc_reward();
-                    self.done = true;
+                    self.board.done = true;
                 }
             }
             MoveAction::Down => {
@@ -226,7 +231,7 @@ impl Environment for GridEnvironment {
                     self.calc_reward();
                 } else {
                     self.calc_reward();
-                    self.done = true;
+                    self.board.done = true;
                 }
             }
             MoveAction::Left => {
@@ -235,7 +240,7 @@ impl Environment for GridEnvironment {
                     self.calc_reward();
                 } else {
                     self.calc_reward();
-                    self.done = true;
+                    self.board.done = true;
                 }
             }
             MoveAction::Right => {
@@ -244,12 +249,11 @@ impl Environment for GridEnvironment {
                     self.calc_reward();
                 } else {
                     self.calc_reward();
-                    self.done = true;
+                    self.board.done = true;
                 }
             }
         }
         Step {
-            is_final: self.done,
             reward: slice::from_ref(&self.reward),
             next_state: &self.board,
         }

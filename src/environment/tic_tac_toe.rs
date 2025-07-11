@@ -60,6 +60,7 @@ impl CellState {
 pub struct Board {
     pub cells: [[CellState; 3]; 3],
     pub current_player: TicTacPlayer,
+    pub done: bool,
 }
 
 impl SpaceElem for Board {
@@ -74,6 +75,7 @@ impl SpaceElem for Board {
             6 => Some(self.cells[2][0] as usize),
             7 => Some(self.cells[2][1] as usize),
             8 => Some(self.cells[2][2] as usize),
+            9 => Some(self.done as usize),
             _ => None,
         }
     }
@@ -94,6 +96,7 @@ impl SpaceElem for Board {
             let mut temp = Self {
                 cells: [[CellState::Empty; 3]; 3],
                 current_player,
+                done: false,
             };
             for n in discrete.iter().enumerate() {
                 let row = n.0 / 3;
@@ -108,10 +111,11 @@ impl SpaceElem for Board {
 }
 
 impl State for Board {
-    fn current_player(&self) -> usize {
-        match self.current_player {
-            TicTacPlayer::X => 0,
-            TicTacPlayer::O => 1,
+    fn current_player(&self) -> Option<usize> {
+        match (self.current_player, self.done) {
+            (TicTacPlayer::X, false) => Some(0),
+            (TicTacPlayer::O, false) => Some(1),
+            (_              , true ) => None
         }
     }
 }
@@ -165,7 +169,6 @@ pub enum TicTacPlayer {
 pub struct TicTacEnvironment {
     pub board: Board,
     pub reward: [f32; 2],
-    pub done: bool,
     pub player: TicTacPlayer,
 }
 
@@ -175,9 +178,9 @@ impl TicTacEnvironment {
             board: Board {
                 cells: [[CellState::Empty; 3]; 3],
                 current_player: TicTacPlayer::X, // X starts first
+                done: false,
             },
             reward: [0.0, 0.0],
-            done: false,
             player: TicTacPlayer::X,
         }
     }
@@ -261,7 +264,7 @@ impl Environment for TicTacEnvironment {
                     self.player = TicTacPlayer::O;
                 } else {
                     self.reward = [-1.0, 1.0]; // Invalid move
-                    self.done = true;
+                    self.board.done = true;
                 }
             }
             TicTacPlayer::O => {
@@ -271,12 +274,11 @@ impl Environment for TicTacEnvironment {
                     self.player = TicTacPlayer::X;
                 } else {
                     self.reward = [1.0, -1.0]; // Invalid move
-                    self.done = true;
+                    self.board.done = true;
                 }
             }
         }
         Step {
-            is_final: self.done,
             reward: &self.reward,
             next_state: &self.board,
         }
