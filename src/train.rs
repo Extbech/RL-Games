@@ -2,12 +2,15 @@ use std::{cell::RefCell, fmt::Write, rc::Rc};
 
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 
-use crate::{Agent, Environment, Step, State, StateSpace};
+use crate::{Agent, Environment, State, StateSpace, Step};
 
 /// Trains the agent by running a specified number of episodes in the environment.
 /// Each episode consists of the agent taking actions in the environment until a terminal state is reached. e.g. the agent either won or lost.
 pub fn train<E: Environment>(env: &mut E, agents: &[Rc<RefCell<dyn Agent<E>>>], episodes: u64) {
-    assert!(env.state_space().player_count() == agents.len(), "Number of agents must match the number of players in the environment.");
+    assert!(
+        env.state_space().player_count() == agents.len(),
+        "Number of agents must match the number of players in the environment."
+    );
     let pb = ProgressBar::new(episodes);
     pb.set_style(
         ProgressStyle::with_template(
@@ -30,7 +33,12 @@ pub fn train<E: Environment>(env: &mut E, agents: &[Rc<RefCell<dyn Agent<E>>>], 
             // If the current player has done an action before, we can learn from it
             if let Some((prev_state, action)) = &prev[current_player] {
                 // If the previous state is not None, we can learn from it
-                agents[current_player].borrow_mut().learn(prev_state, action, rewards[current_player], &state);
+                agents[current_player].borrow_mut().learn(
+                    prev_state,
+                    action,
+                    rewards[current_player],
+                    &state,
+                );
                 rewards[current_player] = 0.0; // Reset the reward for the current player
             }
             // Get the next action from the current player
@@ -51,7 +59,12 @@ pub fn train<E: Environment>(env: &mut E, agents: &[Rc<RefCell<dyn Agent<E>>>], 
                 for player in 0..agents.len() {
                     if let Some((prev_state, action)) = &prev[player] {
                         // If the previous state is not None, we can learn from it
-                        agents[current_player].borrow_mut().learn(prev_state, action, rewards[current_player], &state);
+                        agents[player].borrow_mut().learn(
+                            prev_state,
+                            action,
+                            rewards[player],
+                            &state,
+                        );
                     }
                 }
                 break;

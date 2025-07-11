@@ -2,7 +2,6 @@ use rand::random_range;
 use serde::Serialize;
 use std::ops::Range;
 
-
 pub mod agents;
 pub mod environment;
 pub mod train;
@@ -51,11 +50,7 @@ pub trait Action: SpaceElem + Default {
             continuous_dims.push(random_range(range.start..range.end));
             d += 1;
         }
-        let r = Self::try_build(
-            space,
-            &discrete_dims,
-            &continuous_dims,
-        );
+        let r = Self::try_build(space, &discrete_dims, &continuous_dims);
         #[cfg(debug_assertions)]
         if let Some(ref a) = r {
             if !a.is_valid(space) {
@@ -101,8 +96,8 @@ trait State: SpaceElem + Clone {
 pub trait Environment {
     type StateSpace: StateSpace;
     type ActionSpace: Space;
-    type State: State;
-    type Action: Action;
+    type State: State + std::fmt::Debug;
+    type Action: Action + std::fmt::Debug;
 
     fn state_space(&self) -> &Self::StateSpace;
     fn action_space(&self) -> &Self::ActionSpace;
@@ -137,7 +132,14 @@ pub trait Agent<E: Environment> {
     /// * `reward` - The immediate reward received after taking the action.
     /// * `next_state` - The state after taking the action.
     #[allow(unused_variables)]
-    fn learn(&mut self, old_state: &E::State, action: &E::Action, reward: f32, next_state: &E::State) {}
+    fn learn(
+        &mut self,
+        old_state: &E::State,
+        action: &E::Action,
+        reward: f32,
+        next_state: &E::State,
+    ) {
+    }
 
     /// Selects the most preferred action, as opposed to `act`, which may
     /// do something worse to learn.

@@ -260,7 +260,7 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::O;
                 } else {
-                    self.reward = [-1.0, 1.0]; // Invalid move
+                    self.reward = [-100.0, 1.0]; // Invalid move
                     self.done = true;
                 }
             }
@@ -270,7 +270,7 @@ impl Environment for TicTacEnvironment {
                     self.calc_reward();
                     self.player = TicTacPlayer::X;
                 } else {
-                    self.reward = [1.0, -1.0]; // Invalid move
+                    self.reward = [1.0, -100.0]; // Invalid move
                     self.done = true;
                 }
             }
