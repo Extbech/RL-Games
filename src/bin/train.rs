@@ -34,7 +34,7 @@ fn main() {
             train::train(
                 &mut env,
                 &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
-                10_000_000,
+                1_000_000,
             );
             // let agents = [
             //     random_agent.clone(),
