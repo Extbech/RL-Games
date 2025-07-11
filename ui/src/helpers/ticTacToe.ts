@@ -12,7 +12,7 @@ export const initTicTacToeBoard = (): TicTacToeBoard => {
 
 export const predictTicTacToe = async (board: TicTacToeBoard): Promise<TicTacAction> => {
     // Make a GET request to the server to predict the next move
-    const response = await fetch(`http://localhost:8000/predict/TicTacToe?state=${JSON.stringify(board)}`, {
+    const response = await fetch(`http://localhost:8000/predict/TicTacDQN?state=${JSON.stringify(board)}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

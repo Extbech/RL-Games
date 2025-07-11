@@ -7,7 +7,7 @@ use actix_web::{
     App, HttpResponse, HttpResponseBuilder, HttpServer, Responder,
 };
 use rust_rl::{
-    agents::q_agent::QAgent,
+    agents::{dqn_agent::DQNAgent, q_agent::QAgent},
     environment::{
         move_to_center::{self, GridEnvironment},
         tic_tac_toe::{self, TicTacEnvironment},
@@ -19,6 +19,7 @@ use serde::Deserialize;
 struct AppState {
     grid_agent: QAgent,
     tic_tac_toe_agent: QAgent,
+    tic_tac_toe_dqn_agent: DQNAgent,
 }
 
 #[actix_web::main]
@@ -28,9 +29,12 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to load Agent with Q-table");
     let tic_tac_toe_agent = QAgent::load_from_file(TIC_TAC_TOE_AGENT_SAVE_FILE_PATH)
         .expect("Failed to load TicTacToe Agent with Q-table");
+    let tic_tac_toe_dqn_agent = DQNAgent::load_from_file("data/dqn_tic_tac_toe.json")
+        .expect("Failed to load DQN TicTacToe Agent with Q-table");
     let app_state = AppState {
         grid_agent,
         tic_tac_toe_agent,
+        tic_tac_toe_dqn_agent
     };
     println!("Agent loaded with Q-table.");
 
@@ -50,10 +54,11 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize)] // TODO: Add agent type enum
 enum EnvironmentType {
     Grid,
     TicTacToe,
+    TicTacDQN
 }
 
 fn predict_all_handler<E: Environment>(
@@ -76,6 +81,9 @@ async fn predict_all(
         EnvironmentType::TicTacToe => {
             predict_all_handler::<TicTacEnvironment>(HttpResponse::Ok(), &agent.tic_tac_toe_agent)
         }
+        EnvironmentType::TicTacDQN => {
+            todo!();
+        }
     }
 }
 
@@ -96,9 +104,13 @@ async fn predict(
             HttpResponse::Ok().json(res)
         }
         EnvironmentType::Grid => {
-            let obj = serde_json::from_str::<move_to_center::Board>(&state)
-                .expect("Failed to deserialize GridEnvironment");
+            let obj = serde_json::from_str::<move_to_center::Board>(&state).unwrap();
             let res = <QAgent as Agent<GridEnvironment>>::predict(&agent.grid_agent, &obj);
+            HttpResponse::Ok().json(res)
+        }
+        EnvironmentType::TicTacDQN => {
+            let obj = serde_json::from_str::<tic_tac_toe::Board>(&state).unwrap();
+            let res = <DQNAgent as Agent<TicTacEnvironment>>::predict(&agent.tic_tac_toe_dqn_agent, &obj);
             HttpResponse::Ok().json(res)
         }
     }

@@ -29,9 +29,9 @@ pub struct QAgent {
     action_space_size: usize,
 }
 
-const EPSILON_DEFAULT: f32 = 0.05;
-const ALPHA_DEFAULT: f32 = 0.1;
-const GAMMA_DEFAULT: f32 = 0.9;
+pub const EPSILON_DEFAULT: f32 = 0.05;
+pub const ALPHA_DEFAULT: f32 = 0.1;
+pub const GAMMA_DEFAULT: f32 = 0.9;
 
 impl Default for QAgent {
     fn default() -> Self {
@@ -129,7 +129,7 @@ fn test_all_elems_as_vec() {
     assert_eq!(v.len(), 9);
 }
 
-fn all_actions<'a, A: Action + 'a>(action_space: &'a [usize]) -> impl Iterator<Item = A> + 'a {
+pub fn all_actions<'a, A: Action + 'a>(action_space: &'a [usize]) -> impl Iterator<Item = A> + 'a {
     let mut indices = vec![0; action_space.len()];
     let max_indices: Vec<usize> = action_space.iter().map(|&s| s - 1).collect();
     std::iter::once(A::try_build(&action_space, &indices, &[]).unwrap()).chain(std::iter::from_fn(
