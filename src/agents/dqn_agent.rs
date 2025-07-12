@@ -1,6 +1,9 @@
 use crate::{
     agents::{
-        network::nn::{ActivationFunction, LossFunction, NeuralNetwork},
+        network::{
+            memory_buffer::{Experience, MemoryBuffer},
+            nn::{ActivationFunction, LossFunction, NeuralNetwork},
+        },
         q_agent::{all_actions, ALPHA_DEFAULT, EPSILON_DEFAULT, GAMMA_DEFAULT},
     },
     Action, Agent, Environment, Space, SpaceElem,
@@ -12,6 +15,8 @@ use std::ops::Range;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DQNAgent {
     pub network: NeuralNetwork,
+    pub memory_buffer: MemoryBuffer,
+    pub batch_size: usize,
     pub epsilon: f32,
     pub gamma: f32,
     pub disc_state_space: Vec<usize>,
@@ -20,7 +25,7 @@ pub struct DQNAgent {
 }
 
 impl DQNAgent {
-    pub fn new() -> Self {
+    pub fn new(buffer_capacity: usize) -> Self {
         DQNAgent {
             network: NeuralNetwork::new(
                 ALPHA_DEFAULT as f64,
@@ -28,6 +33,8 @@ impl DQNAgent {
                 ActivationFunction::Sigmoid,
                 LossFunction::MeanSquaredError,
             ),
+            batch_size: 64,
+            memory_buffer: MemoryBuffer::new(buffer_capacity),
             epsilon: EPSILON_DEFAULT,
             gamma: GAMMA_DEFAULT,
             disc_state_space: Vec::new(),
@@ -60,8 +67,9 @@ impl DQNAgent {
         serde_json::from_reader(reader).map_err(|e| e.to_string())
     }
 
-    pub fn save_to_file(&self, file_path: &str) -> Result<(), String> {
+    pub fn save_to_file(&mut self, file_path: &str) -> Result<(), String> {
         let file = std::fs::File::create(file_path).map_err(|e| e.to_string())?;
+        self.memory_buffer = MemoryBuffer::new(0);
         serde_json::to_writer(file, self).map_err(|e| e.to_string())
     }
 }
@@ -99,24 +107,22 @@ impl<E: Environment> Agent<E> for DQNAgent {
         reward: f32,
         next_state: Option<&<E as Environment>::State>,
     ) {
+        // Add experience to memory buffer
+        self.memory_buffer.add_experience(Experience::new(
+            self.encode_input(old_state),
+            action.discrete(0).unwrap(),
+            reward,
+            self.encode_input(next_state.unwrap()),
+            next_state.is_none(),
+        ));
+        // If the memory buffer is not full enough, we cannot learn yet
+        if self.memory_buffer.buffer.len() < self.batch_size {
+            return;
+        }
+        // Sample a batch of experiences from the memory buffer
+        let (state_batch, action_batch, reward_batch, next_state_bach, done_batch) =
+            self.memory_buffer.sample_and_unpack(self.batch_size);
         todo!("Implement DQN learning algorithm");
-        // let input = self.encode_input(old_state);
-        // let mut max_q_next = f64::MIN;
-        // if let Some(next_state) = next_state {
-        //     for a in all_actions::<E::Action>(&self.action_space) {
-        //         let q_val = self.predict_network(next_state);
-        //         if q_val > max_q_next {
-        //             max_q_next = q_val;
-        //         }
-        //     }
-        // } else {
-        //     // If there is no next state it is terminal, so we set max_q_next to 0
-        //     max_q_next = 0.0;
-        // }
-        // self.network.train(
-        //     vec![input],
-        //     vec![vec![self.gamma as f64 * max_q_next + reward as f64]],
-        // );
     }
 
     fn predict(&self, state: &<E as Environment>::State) -> <E as Environment>::Action {
