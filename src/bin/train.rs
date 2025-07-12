@@ -3,7 +3,8 @@ use std::{cell::RefCell, env::args, rc::Rc, time::Instant};
 use rust_rl::{
     agents::{dqn_agent::DQNAgent, q_agent::QAgent},
     environment::{move_to_center::GridEnvironment, tic_tac_toe::TicTacEnvironment},
-    train, Agent, GRID_AGENT_SAVE_FILE_PATH, TIC_TAC_TOE_AGENT_SAVE_FILE_PATH,
+    train, Agent, DQN_TIC_TAC_TOE_AGENT_SAVE_FILE_PATH, GRID_AGENT_SAVE_FILE_PATH,
+    TIC_TAC_TOE_AGENT_SAVE_FILE_PATH,
 };
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
@@ -75,7 +76,7 @@ fn train_grid_agent(episodes: u64, pb: ProgressBar) {
     let agent = Rc::new(RefCell::new(QAgent::new()));
     agent.borrow_mut().try_init(&env);
     let agents = [agent.clone() as Rc<RefCell<dyn Agent<GridEnvironment>>>];
-    train::train(
+    train::train_q(
         &mut env,
         &agents as &[Rc<RefCell<dyn Agent<GridEnvironment>>>],
         episodes,
@@ -95,7 +96,7 @@ fn train_tic_tac_toe_agent(episodes: u64, pb: ProgressBar) {
         agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
         agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
     ];
-    train::train(
+    train::train_q(
         &mut env,
         &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
         episodes,
@@ -115,7 +116,7 @@ fn train_dqn_tic_tac_toe_agent(episodes: u64, pb: ProgressBar) {
         agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
         agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
     ];
-    train::train(
+    train::train_q(
         &mut env,
         &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
         episodes,
@@ -123,6 +124,6 @@ fn train_dqn_tic_tac_toe_agent(episodes: u64, pb: ProgressBar) {
     );
     agent
         .borrow()
-        .save_to_file("data/dqn_tic_tac_toe.json")
+        .save_to_file(DQN_TIC_TAC_TOE_AGENT_SAVE_FILE_PATH)
         .expect("Failed to save DQN Q-table to file");
 }

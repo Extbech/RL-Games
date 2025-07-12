@@ -12,7 +12,8 @@ use rust_rl::{
         move_to_center::{self, GridEnvironment},
         tic_tac_toe::{self, TicTacEnvironment},
     },
-    Agent, Environment, GRID_AGENT_SAVE_FILE_PATH, TIC_TAC_TOE_AGENT_SAVE_FILE_PATH,
+    Agent, Environment, DQN_TIC_TAC_TOE_AGENT_SAVE_FILE_PATH, GRID_AGENT_SAVE_FILE_PATH,
+    TIC_TAC_TOE_AGENT_SAVE_FILE_PATH,
 };
 use serde::Deserialize;
 
@@ -29,12 +30,12 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to load Agent with Q-table");
     let tic_tac_toe_agent = QAgent::load_from_file(TIC_TAC_TOE_AGENT_SAVE_FILE_PATH)
         .expect("Failed to load TicTacToe Agent with Q-table");
-    let tic_tac_toe_dqn_agent = DQNAgent::load_from_file("data/dqn_tic_tac_toe.json")
+    let tic_tac_toe_dqn_agent = DQNAgent::load_from_file(DQN_TIC_TAC_TOE_AGENT_SAVE_FILE_PATH)
         .expect("Failed to load DQN TicTacToe Agent with Q-table");
     let app_state = AppState {
         grid_agent,
         tic_tac_toe_agent,
-        tic_tac_toe_dqn_agent
+        tic_tac_toe_dqn_agent,
     };
     println!("Agent loaded with Q-table.");
 
@@ -58,7 +59,7 @@ async fn main() -> std::io::Result<()> {
 enum EnvironmentType {
     Grid,
     TicTacToe,
-    TicTacDQN
+    TicTacDQN,
 }
 
 fn predict_all_handler<E: Environment>(
@@ -110,7 +111,8 @@ async fn predict(
         }
         EnvironmentType::TicTacDQN => {
             let obj = serde_json::from_str::<tic_tac_toe::Board>(&state).unwrap();
-            let res = <DQNAgent as Agent<TicTacEnvironment>>::predict(&agent.tic_tac_toe_dqn_agent, &obj);
+            let res =
+                <DQNAgent as Agent<TicTacEnvironment>>::predict(&agent.tic_tac_toe_dqn_agent, &obj);
             HttpResponse::Ok().json(res)
         }
     }

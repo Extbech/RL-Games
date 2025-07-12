@@ -12,7 +12,7 @@ export const initTicTacToeBoard = (): TicTacToeBoard => {
 
 export const predictTicTacToe = async (board: TicTacToeBoard): Promise<TicTacAction> => {
     // Make a GET request to the server to predict the next move
-    const response = await fetch(`http://localhost:8000/predict/TicTacDQN?state=${JSON.stringify(board)}`, {
+    const response = await fetch(`http://localhost:8000/predict/TicTacToe?state=${JSON.stringify(board)}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -24,3 +24,18 @@ export const predictTicTacToe = async (board: TicTacToeBoard): Promise<TicTacAct
     const result = await response.json();
     return result;
 };
+
+export const predictTicTacToeWithDQN = async (board: TicTacToeBoard): Promise<TicTacAction> => {
+    // Make a GET request to the server to predict the next move using DQN
+    const response = await fetch(`http://localhost:8000/predict/TicTacDQN?state=${JSON.stringify(board)}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        }
+    });
+    if (!response.ok) {
+        throw new Error("Network response was not ok");
+    }
+    const result = await response.json();
+    return result;
+}

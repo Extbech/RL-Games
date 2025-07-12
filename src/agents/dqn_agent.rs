@@ -99,23 +99,24 @@ impl<E: Environment> Agent<E> for DQNAgent {
         reward: f32,
         next_state: Option<&<E as Environment>::State>,
     ) {
-        let input = self.encode_input(old_state);
-        let mut max_q_next = f64::MIN;
-        if let Some(next_state) = next_state {
-            for a in all_actions::<E::Action>(&self.action_space) {
-                let q_val = self.predict_network(next_state);
-                if q_val > max_q_next {
-                    max_q_next = q_val;
-                }
-            }
-        } else {
-            // If there is no next state it is terminal, so we set max_q_next to 0
-            max_q_next = 0.0;
-        }
-        self.network.train(
-            vec![input],
-            vec![vec![self.gamma as f64 * max_q_next + reward as f64]],
-        );
+        todo!("Implement DQN learning algorithm");
+        // let input = self.encode_input(old_state);
+        // let mut max_q_next = f64::MIN;
+        // if let Some(next_state) = next_state {
+        //     for a in all_actions::<E::Action>(&self.action_space) {
+        //         let q_val = self.predict_network(next_state);
+        //         if q_val > max_q_next {
+        //             max_q_next = q_val;
+        //         }
+        //     }
+        // } else {
+        //     // If there is no next state it is terminal, so we set max_q_next to 0
+        //     max_q_next = 0.0;
+        // }
+        // self.network.train(
+        //     vec![input],
+        //     vec![vec![self.gamma as f64 * max_q_next + reward as f64]],
+        // );
     }
 
     fn predict(&self, state: &<E as Environment>::State) -> <E as Environment>::Action {

@@ -6,7 +6,7 @@ use crate::{Agent, Environment, State, StateSpace, Step};
 
 /// Trains the agent by running a specified number of episodes in the environment.
 /// Each episode consists of the agent taking actions in the environment until a terminal state is reached. e.g. the agent either won or lost.
-pub fn train<E: Environment>(
+pub fn train_q<E: Environment>(
     env: &mut E,
     agents: &[Rc<RefCell<dyn Agent<E>>>],
     episodes: u64,
@@ -52,9 +52,29 @@ pub fn train<E: Environment>(
         for player in 0..agents.len() {
             if let Some((prev_state, action)) = &prev[player] {
                 // If the previous state is not None, we can learn from it
-                agents[player].borrow_mut().learn(prev_state, action, rewards[player], None);
+                agents[player]
+                    .borrow_mut()
+                    .learn(prev_state, action, rewards[player], None);
             }
         }
+        pb.set_position(episode);
+    }
+    pb.finish_with_message("Training completed");
+}
+
+pub fn train_dqn<E: Environment>(
+    env: &mut E,
+    agent: &mut dyn Agent<E>,
+    episodes: u64,
+    pb: ProgressBar,
+) {
+    assert!(
+        env.state_space().player_count() == 1,
+        "DQN agent can only be used in single-player environments."
+    );
+
+    for episode in 1..=episodes {
+        todo!("Implement DQN training logic here");
         pb.set_position(episode);
     }
     pb.finish_with_message("Training completed");

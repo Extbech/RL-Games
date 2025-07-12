@@ -8,6 +8,7 @@ pub mod train;
 
 pub const GRID_AGENT_SAVE_FILE_PATH: &str = "data/q_tables/grid.json";
 pub const TIC_TAC_TOE_AGENT_SAVE_FILE_PATH: &str = "data/q_tables/tic_tac_toe.json";
+pub const DQN_TIC_TAC_TOE_AGENT_SAVE_FILE_PATH: &str = "data/weights/dqn_tic_tac_toe.json";
 
 /// A Generalization of spaces, both state and action spaces
 pub trait Space: Default + Clone {
