@@ -76,7 +76,7 @@ export const GridTraversal = () => {
         }}
       >
         <Typography variant="h6" sx={{ color: "white" }}>
-          Loading Q-Table...
+          Loading QAgent...
         </Typography>
       </div>
     );
