@@ -14,7 +14,8 @@ use std::ops::Range;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DQNAgent {
-    pub network: NeuralNetwork,
+    pub policy_net: NeuralNetwork,
+    pub target_net: NeuralNetwork,
     pub memory_buffer: MemoryBuffer,
     pub batch_size: usize,
     pub epsilon: f32,
@@ -27,7 +28,13 @@ pub struct DQNAgent {
 impl DQNAgent {
     pub fn new(buffer_capacity: usize) -> Self {
         DQNAgent {
-            network: NeuralNetwork::new(
+            policy_net: NeuralNetwork::new(
+                ALPHA_DEFAULT as f64,
+                ActivationFunction::Sigmoid,
+                ActivationFunction::Sigmoid,
+                LossFunction::MeanSquaredError,
+            ),
+            target_net: NeuralNetwork::new(
                 ALPHA_DEFAULT as f64,
                 ActivationFunction::Sigmoid,
                 ActivationFunction::Sigmoid,
@@ -58,7 +65,7 @@ impl DQNAgent {
 
     fn predict_network(&self, state: &impl SpaceElem) -> Vec<f64> {
         let input = self.encode_input(state);
-        self.network.predict(input)
+        self.policy_net.predict(input)
     }
 
     pub fn load_from_file(file_path: &str) -> Result<Self, String> {
@@ -86,7 +93,8 @@ impl<E: Environment> Agent<E> for DQNAgent {
         let output_dims = self.action_space.iter().product();
         // First layer has size of total dimensions of state and action spaces
         // Last Layer has only one ouput, the Q-value
-        self.network.add_layers(&[input_dims, 64, output_dims]);
+        self.policy_net.add_layers(&[input_dims, 64, output_dims]);
+        self.target_net.add_layers(&[input_dims, 64, output_dims]);
         true
     }
 
