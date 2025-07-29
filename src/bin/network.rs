@@ -44,7 +44,7 @@ fn plot_loss(history: &[f64]) -> Result<(), Box<dyn std::error::Error>> {
     root.fill(&WHITE)?;
 
     let mut chart = ChartBuilder::on(&root)
-        .caption("Loss Over Time", ("sans-serif", 50))
+        .caption("MSE", ("sans-serif", 50))
         .margin(5)
         .x_label_area_size(30)
         .y_label_area_size(30)
