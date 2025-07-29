@@ -1,4 +1,4 @@
-use crate::{Agent, Action, Environment};
+use crate::{Action, Agent, Environment};
 
 pub struct RandomAgent<E: Environment> {
     action_space: <E as Environment>::ActionSpace,
@@ -6,7 +6,9 @@ pub struct RandomAgent<E: Environment> {
 
 impl<E: Environment> RandomAgent<E> {
     pub fn new() -> Self {
-        Self {action_space: <E as Environment>::ActionSpace::default()}
+        Self {
+            action_space: <E as Environment>::ActionSpace::default(),
+        }
     }
 }
 

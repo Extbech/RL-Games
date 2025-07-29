@@ -128,9 +128,9 @@ impl<E: Environment> Agent<E> for DQNAgent {
             return;
         }
         // Sample a batch of experiences from the memory buffer
-        let (state_batch, action_batch, reward_batch, next_state_bach, done_batch) =
-            self.memory_buffer.sample_and_unpack(self.batch_size);
         todo!("Implement DQN learning algorithm");
+        // let (state_batch, action_batch, reward_batch, next_state_bach, done_batch) =
+        //     self.memory_buffer.sample_and_unpack(self.batch_size);
     }
 
     fn predict(&self, state: &<E as Environment>::State) -> <E as Environment>::Action {

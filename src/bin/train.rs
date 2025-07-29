@@ -30,10 +30,10 @@ fn main() {
             pb.set_message("Training Tic Tac Toe Agent");
             train_tic_tac_toe_agent(EPISODES, pb);
         }
-        "dqn-tic-tac-toe" => {
-            pb.set_message("Training DQN Tic Tac Toe Agent");
-            train_dqn_tic_tac_toe_agent(EPISODES, pb);
-        }
+        // "dqn-tic-tac-toe" => {
+        //     pb.set_message("Training DQN Tic Tac Toe Agent");
+        //     train_dqn_tic_tac_toe_agent(EPISODES, pb);
+        // }
         _ => {
             println!("training all agents");
             let m: MultiProgress = MultiProgress::new();
@@ -55,9 +55,9 @@ fn main() {
             threads.push(std::thread::spawn(|| {
                 train_tic_tac_toe_agent(EPISODES, pb2)
             }));
-            threads.push(std::thread::spawn(|| {
-                train_dqn_tic_tac_toe_agent(EPISODES, pb3)
-            }));
+            // threads.push(std::thread::spawn(|| {
+            //     train_dqn_tic_tac_toe_agent(EPISODES, pb3)
+            // }));
             for thread in threads {
                 thread.join().expect("Thread panicked");
             }
@@ -108,22 +108,22 @@ fn train_tic_tac_toe_agent(episodes: u64, pb: ProgressBar) {
         .expect("Failed to save Q-table to file");
 }
 
-fn train_dqn_tic_tac_toe_agent(episodes: u64, pb: ProgressBar) {
-    let mut env = TicTacEnvironment::new();
-    let agent = Rc::new(RefCell::new(DQNAgent::new()));
-    agent.borrow_mut().try_init(&env);
-    let agents = [
-        agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
-        agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
-    ];
-    train::train_q(
-        &mut env,
-        &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
-        episodes,
-        pb,
-    );
-    agent
-        .borrow()
-        .save_to_file(DQN_TIC_TAC_TOE_AGENT_SAVE_FILE_PATH)
-        .expect("Failed to save DQN Q-table to file");
-}
+// fn train_dqn_tic_tac_toe_agent(episodes: u64, pb: ProgressBar) {
+//     let mut env = TicTacEnvironment::new();
+//     let agent = Rc::new(RefCell::new(DQNAgent::new()));
+//     agent.borrow_mut().try_init(&env);
+//     let agents = [
+//         agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
+//         agent.clone() as Rc<RefCell<dyn Agent<TicTacEnvironment>>>,
+//     ];
+//     train::train_q(
+//         &mut env,
+//         &agents as &[Rc<RefCell<dyn Agent<TicTacEnvironment>>>],
+//         episodes,
+//         pb,
+//     );
+//     agent
+//         .borrow()
+//         .save_to_file(DQN_TIC_TAC_TOE_AGENT_SAVE_FILE_PATH)
+//         .expect("Failed to save DQN Q-table to file");
+// }

@@ -59,29 +59,29 @@ impl MemoryBuffer {
         sampled_indices.iter().map(|&i| &self.buffer[*i]).collect()
     }
 
-    pub fn sample_and_unpack(
-        &self,
-        batch_size: usize,
-    ) -> (
-        Vec<Vec<f64>>,
-        Vec<usize>,
-        Vec<f32>,
-        Vec<Vec<f64>>,
-        Vec<bool>,
-    ) {
-        let sample = self.sample(batch_size);
-        let (states, actions, rewards, next_states, dones) = sample
-            .into_iter()
-            .map(|exp| {
-                (
-                    exp.state.clone(),
-                    exp.action,
-                    exp.reward,
-                    exp.next_state.clone(),
-                    exp.done,
-                )
-            })
-            .collect();
-        (states, actions, rewards, next_states, dones)
-    }
+    // pub fn sample_and_unpack(
+    //     &self,
+    //     batch_size: usize,
+    // ) -> (
+    //     Vec<Vec<f64>>,
+    //     Vec<usize>,
+    //     Vec<f32>,
+    //     Vec<Vec<f64>>,
+    //     Vec<bool>,
+    // ) {
+    //     let sample = self.sample(batch_size);
+    //     let (states, actions, rewards, next_states, dones) = sample
+    //         .into_iter()
+    //         .map(|exp| {
+    //             (
+    //                 exp.state.clone(),
+    //                 exp.action,
+    //                 exp.reward,
+    //                 exp.next_state.clone(),
+    //                 exp.done,
+    //             )
+    //         })
+    //         .collect();
+    //     (states, actions, rewards, next_states, dones)
+    // }
 }

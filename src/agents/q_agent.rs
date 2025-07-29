@@ -212,7 +212,13 @@ impl<E: Environment> Agent<E> for QAgent {
     /// - `action`: The action taken.
     /// - `reward`: The immediate reward received.
     /// - `next_state`: The state resulting after taking the action.
-    fn learn(&mut self, state: &E::State, action: &E::Action, reward: f32, next_state: Option<&E::State>) {
+    fn learn(
+        &mut self,
+        state: &E::State,
+        action: &E::Action,
+        reward: f32,
+        next_state: Option<&E::State>,
+    ) {
         let mut max_q_next = f32::MIN;
         if let Some(next_state) = next_state {
             for a in all_actions::<E::Action>(&self.action_space) {
@@ -225,7 +231,6 @@ impl<E: Environment> Agent<E> for QAgent {
             // If there is no next state it is terminal, so we set max_q_next to 0
             max_q_next = 0.0;
         }
-
 
         *self.q_val_mut(state, action) +=
             self.alpha * (reward + self.gamma * max_q_next - self.q_val(state, action));
