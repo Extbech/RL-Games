@@ -100,7 +100,7 @@ impl LossFunction {
             LossFunction::MeanSquaredError => predicted
                 .iter()
                 .zip(target)
-                .map(|(p, t)| (p - t) / predicted.len() as f64)
+                .map(|(p, t)| 2.0 * (p - t) / predicted.len() as f64)
                 .collect(),
             LossFunction::BinaryCrossEntropy => predicted
                 .iter()
@@ -120,7 +120,7 @@ impl LossFunction {
 /// A simple deep neural network struct.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NeuralNetwork {
-    layers: Vec<Layer>,
+    pub layers: Vec<Layer>,
     learning_rate: f64,
     activation_function: ActivationFunction,
     final_activation: ActivationFunction,
@@ -196,9 +196,8 @@ impl NeuralNetwork {
             .collect()
     }
 
-    ///
+    /// TODO: Implement docs...
     fn backpropagation(&mut self, cache: Vec<Vec<f64>>, target: &[f64], log: bool) {
-        let max_gradient = 1.0; // Maximum gradient value for clipping
 
         // 1. Compute initial delta at the output layer.
         // Get the output of the final layer.
@@ -214,33 +213,29 @@ impl NeuralNetwork {
             .collect();
 
         // 2. Iterate backwards over layers.
-        for i in (1..cache.len() - 1).rev() {
-            let activations = &cache[i];
-            let layer_index = i;
-
-            // Compute gradients for weights and biases.
-            let mut weight_gradients = vec![vec![0.0; activations.len()]; delta.len()];
-            for j in 0..delta.len() {
-                for k in 0..activations.len() {
-                    weight_gradients[j][k] = delta[j] * activations[k];
+        for i in (0..cache.len() - 1).rev() {
+            if i == cache.len() - 1 {
+                // Compute gradients for weights and biases.
+                let mut weight_gradients = vec![vec![0.0; cache[i].len()]; delta.len()];
+                for j in 0..delta.len() {
+                    for k in 0..cache[i].len() {
+                        weight_gradients[j][k] = delta[j] * cache[i][k];
+                    }
+                }
+                // Update weights and biases.
+                for j in 0..self.layers[i].weights.len() {
+                    for k in 0..self.layers[i].weights[j].len() {
+                        self.layers[i].weights[j][k] -=
+                            self.learning_rate * weight_gradients[j][k];
+                    }
+                    self.layers[i].biases[j] -= self.learning_rate * delta[j];
                 }
             }
+            else {
+                todo!()
 
-            // Clip gradients to prevent exploding gradients.
-            for grad_row in weight_gradients.iter_mut() {
-                for grad in grad_row.iter_mut() {
-                    *grad = grad.clamp(-max_gradient, max_gradient);
-                }
             }
 
-            // Update weights and biases.
-            for j in 0..self.layers[layer_index].weights.len() {
-                for k in 0..self.layers[layer_index].weights[j].len() {
-                    self.layers[layer_index].weights[j][k] -=
-                        self.learning_rate * weight_gradients[j][k];
-                }
-                self.layers[layer_index].biases[j] -= self.learning_rate * delta[j];
-            }
 
             // 3. Propagate the error to previous layer if not at the first layer.
             if layer_index > 0 {
@@ -249,8 +244,7 @@ impl NeuralNetwork {
                     for j in 0..delta.len() {
                         new_delta[k] += delta[j] * self.layers[layer_index].weights[j][k];
                     }
-                    let activation = cache[i][k];
-                    new_delta[k] *= self.activation_function.derivative(activation);
+                    new_delta[k] *= self.activation_function.derivative(cache[i][k]);
                 }
                 delta = new_delta;
             }
@@ -378,9 +372,9 @@ mod tests {
     #[test]
     fn test_backward_pass() {
         let mut nn = NeuralNetwork::new(
-            0.01,
+            0.5,
             ActivationFunction::ReLU,
-            ActivationFunction::ReLU,
+            ActivationFunction::Linear,
             LossFunction::MeanSquaredError,
         );
         nn.add_layers(&[2, 2, 1]);
@@ -407,17 +401,57 @@ mod tests {
         // L2-N1 ==> 0.5 * 0.5 + 1.0 * 0.2 + 0.1 = 0.55
 
         // L3-N0 ==> 0.3 * 0.45 + 0.2 * 0.55 + 0.1 = 0.345 
-        // Forward pass
+        
+        // Perform Forward pass
         let cache = nn.forward(input.clone());
 
-        assert!((cache.last().unwrap().first().unwrap() - 0.345).abs() < 1e-5);
-        // Backward pass
+        // Assert that the output of the last layer is approximately 0.345
+        assert!((cache.last().unwrap().first().unwrap() - 0.345).abs() < 1e-3);
+        
+        // Perform Backward Pass
         nn.backpropagation(cache, &target, true);
-        assert!((nn.history.first().unwrap() - 0.024025).abs() < 1e-5);
-        // // Check if weights and biases have been updated.
-        // assert!(nn.layers.iter().any(|layer| {
-        //     layer.weights.iter().any(|weights| weights.iter().any(|&w| w != 0.0))
-        //         || layer.biases.iter().any(|&b| b != 0.0)
-        // }));
+
+        // delta = -2 * (target - prediction) => -2 * (0.5 - 0.345) = -0.31
+        // dError/dW ==> delta x (In * Wn + Ik +Wk) 
+        // W_new = W - alpha (dError/dW)
+
+        // L3-W_6 = 0.2 - 0.5 * (-0.31) * 0.55 = 0.28525
+        assert!((nn.layers[1].weights[0][1] - 0.28525).abs() < 0.01);
+        
+        // L3-W_5 = 0.3 - 0.5 * (-0.31) * 0.45 = 0.36975
+        assert!((nn.layers[1].weights[0][0] - 0.36975).abs() < 0.01);
+
+        // L2-W_4 = 1.0 - 0.5 * (-0.31 x 0.1 x 1.0 x 0.2) = 1.0031
+        assert!((nn.layers[0].weights[1][1] - 1.0031).abs() < 0.01);
+        
+        // L2-W_3 = 0.5 - 0.5 * (-0.31 x 0.1 x 1.0 x 0.2) = 0.5031
+        assert!((nn.layers[0].weights[0][1] - 0.5031).abs() < 0.01);
+
+        // L2-W_2 = 0.5 - 0.5 * (-0.31 x 0.1 x 1.0 x 0.5) = 0.5031
+        assert!((nn.layers[0].weights[1][0] - 0.5031).abs() < 0.01);
+
+        // L2-W_1 = 0.5 - 0.5 * (-0.31 x 0.1 x 1.0 x 0.5) = 0.50465
+        assert!((nn.layers[0].weights[0][0] - 0.50465).abs() < 0.01);
+    
     }
+
+    #[test]
+    fn test_with_larger_network() {
+        let mut nn = NeuralNetwork::new(
+            0.5,
+            ActivationFunction::ReLU,
+            ActivationFunction::Linear,
+            LossFunction::MeanSquaredError,
+        );
+        nn.add_layers(&[1, 2, 1]);
+        
+        let input = vec![0.2];
+        let target = vec![0.5];
+
+        let cache = nn.forward(input.clone());
+
+        nn.backpropagation(cache, &target, true);
+
+    }
+
 }

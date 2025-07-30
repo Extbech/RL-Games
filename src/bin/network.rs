@@ -3,15 +3,15 @@ use rust_rl::agents::network::nn::{self, NeuralNetwork};
 
 fn main() {
     let mut network = NeuralNetwork::new(
-        0.01,
-        nn::ActivationFunction::Tanh,
+        0.001,
+        nn::ActivationFunction::ReLU,
         nn::ActivationFunction::Linear,
         nn::LossFunction::MeanSquaredError,
     );
-    network.add_layers(&[1, 32, 32, 64, 1]);
+    network.add_layers(&[1, 2, 4, 1]);
 
-    // Generate 100_000 random points in the range [-5π, 5π]
-    let input_data = (0..1000000)
+    // Generate 1_000_000 random points in the range [-5π, 5π]
+    let input_data = (0..1_000_000)
         .map(|_| vec![rand::random_range(-5.0 * std::f64::consts::PI.. 5.0 * std::f64::consts::PI)])
         .collect::<Vec<Vec<f64>>>();
     // Output
@@ -33,6 +33,7 @@ fn main() {
     plot_sine_approximation(&test_data, &predictions)
         .expect("Failed to plot sine approximation");
 
+    println!("{:?}", network.layers);
 }
 
 fn sin(x: &[Vec<f64>]) -> Vec<Vec<f64>> {
